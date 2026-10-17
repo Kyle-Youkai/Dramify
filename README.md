@@ -59,3 +59,7 @@ Checked: wrong code rejected, changed code invalidates old sessions, sign out re
 ## Fixed participant order
 
 `dramaOrder` contains exactly 16 unique integer IDs (1–16). New participants receive one shuffled order. Older records without it receive and save an order on their next entry. Malformed orders are replaced with a valid shuffled order. If saving fails, the app remains behind the entry screen with an error instead of showing an unsaved order. The saved ID order is combined with the participant's fixed condition to preserve complete image/title pairs. `window.dramifyOrder` exposes the restored displayed order.
+
+## Sign-out key code
+
+Sign out now opens a completion screen showing `completionCode` from `config.js` (initial value `skmxbueo`) with a copy control and a Back to sign in action. The screen persists across refreshes in the same tab using `dramify.completed.v1` in sessionStorage. Sign out preserves the participant profile and drama order; it does not certify that research data has been uploaded. Upload updated config.js, enrollment.js, index.html and style.css to deploy this change.

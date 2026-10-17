@@ -10,6 +10,7 @@ let activeParticipant = null;
 let enrollmentStep = 1;
 let returningParticipant = null;
 const ACCESS_SESSION_KEY = "dramify.access.v1";
+const COMPLETION_SESSION_KEY = "dramify.completed.v1";
 const accessCodeInput = document.querySelector("#access-code");
 const currentAccessCode = window.DRAMIFY_CONFIG.accessCode;
 
@@ -105,7 +106,10 @@ try {
       // A changed configured code invalidates the previous browser session.
       let access = null;
       try { access = JSON.parse(sessionStorage.getItem(ACCESS_SESSION_KEY) || "null"); } catch (error) { /* Show the code entry again. */ }
-      if (access && access.participantId === participant.id && access.code === currentAccessCode) enterDramify(participant);
+      let completed = false;
+      try { completed = sessionStorage.getItem(COMPLETION_SESSION_KEY) === participant.id; } catch (error) { /* The entry form remains available. */ }
+      if (completed) showCompletionScreen();
+      else if (access && access.participantId === participant.id && access.code === currentAccessCode) enterDramify(participant);
     }
     else showEnrollmentError("Your saved details could not be restored. Please complete the form again.");
   }
@@ -199,14 +203,38 @@ feedbackForm.addEventListener("submit", event => {
 
 
 // Sign out ends access, but preserves the participant record and fixed condition.
+function showCompletionScreen() {
+  document.querySelector("#dramify-app").hidden = true;
+  document.querySelector(".enrollment").hidden = true;
+  document.querySelector(".completion-screen").hidden = false;
+  document.querySelector(".completion-code").textContent = window.DRAMIFY_CONFIG.completionCode;
+  document.body.classList.add("enrolling");
+  document.querySelector("#completion-title").focus();
+}
+
 document.querySelector(".sign-out").addEventListener("click", () => {
   try {
     sessionStorage.removeItem(ACCESS_SESSION_KEY);
+    if (activeParticipant) sessionStorage.setItem(COMPLETION_SESSION_KEY, activeParticipant.id);
   } catch (error) {
-    // Even if storage is unavailable, hide the current application immediately.
+    // Still end access and show the code if session storage is unavailable.
   }
-  document.querySelector("#dramify-app").hidden = true;
-  document.querySelector(".enrollment").hidden = false;
-  document.body.classList.add("enrolling");
+  activeParticipant = null;
+  if (feedbackDialog.open) feedbackDialog.close();
+  showCompletionScreen();
+});
+
+document.querySelector(".copy-key-code").addEventListener("click", async () => {
+  const status = document.querySelector(".copy-code-status");
+  try {
+    await navigator.clipboard.writeText(window.DRAMIFY_CONFIG.completionCode);
+    status.textContent = "Key code copied.";
+  } catch (error) {
+    status.textContent = "Please select and copy the key code above.";
+  }
+});
+
+document.querySelector(".return-to-entry").addEventListener("click", () => {
+  try { sessionStorage.removeItem(COMPLETION_SESSION_KEY); } catch (error) { /* Reload the entry screen. */ }
   window.location.reload();
 });
