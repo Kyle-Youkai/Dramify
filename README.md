@@ -63,3 +63,7 @@ Checked: wrong code rejected, changed code invalidates old sessions, sign out re
 ## Sign-out key code
 
 Sign out now opens a completion screen showing `completionCode` from `config.js` (initial value `skmxbueo`) with a copy control and a Back to sign in action. The screen persists across refreshes in the same tab using `dramify.completed.v1` in sessionStorage. Sign out preserves the participant profile and drama order; it does not certify that research data has been uploaded. Upload updated config.js, enrollment.js, index.html and style.css to deploy this change.
+
+## Profile and history navigation
+
+The header profile control opens an editable nickname, gender, age and country form. Saving updates the existing participant record while preserving ID, condition, registration time and dramaOrder. Browsing History is an intentionally empty view and does not collect browsing events. Removed the Genre control and updated entry and empty-watchlist copy. Deploy index.html, style.css, script.js and enrollment.js for these changes.

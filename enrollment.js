@@ -36,14 +36,15 @@ for (const country of countries) {
 
 function showEnrollmentStep(step) {
   enrollmentStep = step;
+  document.querySelector(".enrollment-instruction").hidden = step !== 1;
   document.querySelector("#nickname-step").hidden = step !== 1;
   document.querySelector("#details-step").hidden = step !== 2;
   document.querySelector("#details-step").disabled = step !== 2;
   document.querySelector("#enrollment-step").textContent = String(step);
   const heading = document.querySelector("#welcome-title");
-  heading.textContent = step === 1 ? "What should we call you?" : "A little about you";
+  heading.textContent = step === 1 ? "Welcome Dramify" : "A little about you";
   document.querySelector(".enrollment-intro").textContent = step === 1
-    ? "Choose a nickname to make Dramify feel like home."
+    ? "On the Dramify homepage, users need to enter their nickname and access code to complete registration and enter Dramify."
     : "Help us get to know you so we can recommend dramas that suit you.";
   document.querySelector("#enrollment-back").hidden = step === 1;
   document.querySelector(".enrollment-submit").textContent = step === 1 ? "Continue →" : "Start exploring →";
@@ -99,8 +100,8 @@ try {
       returningParticipant = participant;
       nicknameInput.value = participant.nickname;
       nicknameInput.readOnly = true;
-      document.querySelector("#welcome-title").textContent = "Welcome back";
-      document.querySelector(".enrollment-intro").textContent = "Enter your access code to return to Dramify.";
+      document.querySelector("#welcome-title").textContent = "Welcome Dramify";
+      document.querySelector(".enrollment-intro").textContent = "On the Dramify homepage, users need to enter their nickname and access code to complete registration and enter Dramify.";
       document.querySelector(".enrollment-progress").hidden = true;
       document.querySelector(".enrollment-submit").textContent = "Continue to Dramify →";
       // A changed configured code invalidates the previous browser session.
@@ -169,7 +170,7 @@ participantForm.addEventListener("submit", event => {
 });
 
 
-const feedbackDialog = document.querySelector(".feedback-dialog");
+const feedbackDialog = document.querySelector(".feedback-only-dialog");
 const feedbackForm = document.querySelector("#feedback-form");
 const feedbackText = document.querySelector("#feedback-text");
 const feedbackStatus = document.querySelector(".feedback-status");
@@ -177,7 +178,7 @@ document.querySelector(".feedback-open").addEventListener("click", () => {
   feedbackStatus.hidden = true;
   feedbackDialog.showModal();
 });
-document.querySelector(".feedback-close").addEventListener("click", () => feedbackDialog.close());
+document.querySelector(".feedback-only-dialog .feedback-close").addEventListener("click", () => feedbackDialog.close());
 feedbackForm.addEventListener("submit", event => {
   event.preventDefault();
   if (!activeParticipant || !feedbackForm.reportValidity()) return;
@@ -221,6 +222,8 @@ document.querySelector(".sign-out").addEventListener("click", () => {
   }
   activeParticipant = null;
   if (feedbackDialog.open) feedbackDialog.close();
+  const profileModal = document.querySelector(".profile-dialog");
+  if (profileModal.open) profileModal.close();
   showCompletionScreen();
 });
 
@@ -237,4 +240,59 @@ document.querySelector(".copy-key-code").addEventListener("click", async () => {
 document.querySelector(".return-to-entry").addEventListener("click", () => {
   try { sessionStorage.removeItem(COMPLETION_SESSION_KEY); } catch (error) { /* Reload the entry screen. */ }
   window.location.reload();
+});
+
+
+const profileDialog = document.querySelector(".profile-dialog");
+const profileForm = document.querySelector("#profile-form");
+const profileCountry = document.querySelector("#profile-country");
+const profileStatus = document.querySelector(".profile-status");
+for (const country of countries) {
+  const option = document.createElement("option");
+  option.value = country.code;
+  option.textContent = country.name;
+  profileCountry.append(option);
+}
+document.querySelector(".user-profile").addEventListener("click", () => {
+  if (!activeParticipant) return;
+  document.querySelector("#profile-nickname").value = activeParticipant.nickname;
+  document.querySelector("#profile-gender").value = activeParticipant.gender;
+  document.querySelector("#profile-age").value = activeParticipant.age;
+  profileCountry.value = activeParticipant.countryCode
+    || countries.find(country => country.name === activeParticipant.country)?.code || "";
+  profileStatus.hidden = true;
+  profileDialog.showModal();
+});
+document.querySelector(".profile-close").addEventListener("click", () => profileDialog.close());
+profileForm.addEventListener("submit", event => {
+  event.preventDefault();
+  if (!activeParticipant || !profileForm.reportValidity()) return;
+  const country = countries.find(country => country.code === profileCountry.value);
+  const updated = {
+    ...activeParticipant,
+    nickname: document.querySelector("#profile-nickname").value.trim(),
+    gender: document.querySelector("#profile-gender").value,
+    age: Number(document.querySelector("#profile-age").value),
+    country: country?.name || "",
+    countryCode: country?.code || "",
+    updatedAt: new Date().toISOString()
+  };
+  if (!isValidParticipant(updated)) {
+    profileStatus.textContent = "Please check your details and try again.";
+    profileStatus.hidden = false;
+    return;
+  }
+  try {
+    localStorage.setItem(PARTICIPANT_STORAGE_KEY, JSON.stringify(updated));
+  } catch (error) {
+    profileStatus.textContent = "Your changes could not be saved. Please allow browser storage and try again.";
+    profileStatus.hidden = false;
+    return;
+  }
+  activeParticipant = updated;
+  returningParticipant = updated;
+  nicknameInput.value = updated.nickname;
+  document.querySelector(".user-nickname").textContent = updated.nickname;
+  document.querySelector(".user-profile").title = updated.nickname;
+  profileDialog.close();
 });

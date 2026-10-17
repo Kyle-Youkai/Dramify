@@ -230,8 +230,15 @@ const search = document.querySelector("input[type=search]");
 const filterButton = document.querySelector(".watchlist-filter");
 const browseButton = document.querySelector(".browse-all");
 let watchlistOnly = false;
+let currentView = "home";
+const historyButton = document.querySelector(".history-button");
+const historyView = document.querySelector(".history-view");
 
 function applyFilters() {
+  if (currentView === "history") {
+    document.querySelector(".empty-message").hidden = true;
+    return;
+  }
   const query = search.value.trim().toLowerCase();
   let visibleCount = 0;
   for (const card of grid.children) {
@@ -243,7 +250,7 @@ function applyFilters() {
   const emptyMessage = document.querySelector(".empty-message");
   emptyMessage.hidden = visibleCount !== 0;
   emptyMessage.textContent = watchlistOnly && watchlist.size === 0
-    ? "Your watchlist is empty. Add a drama from Home."
+    ? "Your watchlist is empty. Add a drama from Dramify."
     : "No dramas found.";
 }
 
@@ -332,6 +339,10 @@ grid.replaceChildren(...displayedDramas.map(renderCard));
 search.addEventListener("input", applyFilters);
 function setWatchlistView(selected) {
   watchlistOnly = selected;
+  currentView = selected ? "watchlist" : "home";
+  historyButton.setAttribute("aria-pressed", "false");
+  historyView.hidden = true;
+  grid.hidden = false;
   document.querySelector(".home-banner").hidden = selected;
   grid.className = selected ? "drama-grid watchlist-view" : "drama-grid";
   filterButton.setAttribute("aria-pressed", String(selected));
@@ -343,5 +354,16 @@ function setWatchlistView(selected) {
 
 filterButton.addEventListener("click", () => setWatchlistView(true));
 browseButton.addEventListener("click", () => setWatchlistView(false));
+historyButton.addEventListener("click", () => {
+  currentView = "history";
+  historyButton.setAttribute("aria-pressed", "true");
+  filterButton.setAttribute("aria-pressed", "false");
+  browseButton.setAttribute("aria-pressed", "false");
+  document.querySelector("main h1").textContent = "Browsing History";
+  document.querySelector(".home-banner").hidden = true;
+  grid.hidden = true;
+  historyView.hidden = false;
+  applyFilters();
+});
 
 }
