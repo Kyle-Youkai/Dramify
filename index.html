@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Discover what's new on Dramify and keep your next favorite drama in My Watchlist.">
   <title>Dramify</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="config.js" defer></script>
-  <script src="script.js" defer></script>
-  <script src="enrollment.js" defer></script>
+  <link rel="stylesheet" href="style.css?v=20261018-feedback5">
+  <script src="config.js?v=20261018-feedback5" defer></script>
+  <script src="script.js?v=20261018-feedback5" defer></script>
+  <script src="enrollment.js?v=20261018-feedback5" defer></script>
 </head>
 <body class="enrolling">
   <section class="enrollment" aria-labelledby="welcome-title">
@@ -54,7 +54,6 @@
       <div class="completion-code" aria-label="Key code"></div>
       <button class="copy-key-code enrollment-submit" type="button">Copy key code</button>
       <p class="copy-code-status" role="status" aria-live="polite"></p>
-      <button class="return-to-entry" type="button">Back to sign in</button>
     </div>
   </section>
   <div id="dramify-app" hidden>
@@ -62,14 +61,14 @@
     <img class="sidebar-logo" src="图像资源/Logo.jpg" alt="Dramify" width="186" height="68">
     <nav aria-label="Browse dramas">
       <button class="browse-all" type="button" aria-pressed="true"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Home</button>
-      <button class="watchlist-filter" type="button" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg>My Watchlist</button>
+      <button class="watchlist-filter" type="button" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2.5"/><circle cx="16" cy="11" r="2.5"/><path d="M7 16h10"/></svg>My Watchlist</button>
+      <button class="wallet-button" type="button" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 9h18M16 13h5v4h-5zM6 5V3h12v2"/></svg><span>Wallet</span><span class="sidebar-balance" aria-live="polite" aria-atomic="true">100 coins</span></button>
       <button class="history-button" type="button" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 11a9 9 0 1 1 2 7M3 4v7h7M12 7v5l3 2"/></svg>Browsing History</button>
       <button class="feedback-open" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4h16v12H9l-5 4V4Z"/><path d="M8 8h8M8 12h5"/></svg>Feedback</button>
     </nav>
     <footer class="sidebar-footer" aria-label="Information">
       <button class="sign-out" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 4H4v16h6M14 8l4 4-4 4M8 12h12"/></svg>Sign out</button>
       <div class="footer-info"><span>Legal</span><span>Safety &amp; Privacy Center</span><span>Privacy Policy</span><span>Cookies</span><span>About Ads</span><span>Accessibility</span></div>
-      <span class="cookies-label">Cookies</span>
       <div class="language"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></svg>English</div>
     </footer>
   </aside>
@@ -82,17 +81,32 @@
     </div>
   </header>
   <main>
-    <div class="home-banner">
-      <img src="图像资源/dramify-banner.png" alt="Stream stories worth staying for. Dive into a world of gripping dramas, fresh releases, and timeless favorites. Watch anytime, anywhere." width="2244" height="701">
-    </div>
-    <div class="section-heading"><h1>New On Dramify</h1><span class="heading-rule" aria-hidden="true"></span></div>
+    <div class="upcoming-banner"><img src="图像资源/预告banner.png" alt="Discover upcoming dramas. Pre-order for 20 coins and watch every episode for free when the drama premieres." width="2172" height="407"></div>
+    <div class="section-heading" hidden><h1></h1><span class="heading-rule" aria-hidden="true"></span></div>
     <section class="drama-grid" aria-label="New dramas"></section>
+    <p class="wallet-notice" role="status" hidden></p>
+    <section class="wallet-view" aria-label="Wallet" hidden>
+      <div class="wallet-summary"><span class="wallet-eyebrow">Your balance</span><p><strong class="wallet-balance">100</strong> <span>coins</span></p><span class="wallet-gift">Registration successful — you've received 100 coins.</span></div>
+      <p class="wallet-explanation">Pre-ordering a drama costs 20 coins. Cancel a pre-order in My Watchlist to receive a 20-coin refund.</p>
+      <h2 class="wallet-history-title">Coin activity</h2><div class="wallet-transactions"></div>
+    </section>
     <section class="history-view" aria-label="Browsing History" hidden></section>
     <p class="empty-message" hidden>No dramas found.</p>
     <noscript>Please enable JavaScript to browse Dramify.</noscript>
   </main>
   </div>
   </div>
+  <dialog class="signout-dialog preorder-dialog" aria-labelledby="signout-title" aria-describedby="signout-description">
+    <h2 id="signout-title">Confirm sign out?</h2>
+    <p id="signout-description">This will delete your profile and saved data from this browser.</p>
+    <p class="signout-error" role="alert" hidden></p>
+    <div class="preorder-dialog-actions"><button class="signout-dismiss" type="button">Stay on Dramify</button><button class="signout-confirm preorder-confirm" type="button">Confirm sign out</button></div>
+  </dialog>
+  <dialog class="preorder-dialog preorder-only-dialog" aria-labelledby="preorder-confirm-title" aria-describedby="preorder-confirm-description">
+    <h2 id="preorder-confirm-title">Confirm pre-order</h2>
+    <p id="preorder-confirm-description"></p>
+    <div class="preorder-dialog-actions"><button class="preorder-dismiss" type="button">Not now</button><button class="preorder-confirm" type="button">Confirm pre-order</button></div>
+  </dialog>
   <dialog class="profile-dialog feedback-dialog" aria-labelledby="profile-title">
     <form id="profile-form">
       <div class="feedback-heading"><h2 id="profile-title">Your profile</h2><button class="profile-close feedback-close" type="button" aria-label="Close profile">×</button></div>
@@ -104,15 +118,35 @@
       <button class="enrollment-submit" type="submit">Save changes</button>
     </form>
   </dialog>
-  <dialog class="feedback-dialog feedback-only-dialog" aria-labelledby="feedback-title">
-    <form id="feedback-form">
-      <div class="feedback-heading"><h2 id="feedback-title">Share your feedback</h2><button class="feedback-close" type="button" aria-label="Close feedback">×</button></div>
-      <p>How has your experience with Dramify been? We'd love to hear your thoughts.</p>
-      <label for="feedback-text">Your feedback</label>
-      <textarea id="feedback-text" name="feedback" rows="6" maxlength="3000" required placeholder="What do you like? What could we improve?"></textarea>
-      <p class="feedback-note">Your feedback will be saved in this browser.</p>
-      <p class="feedback-status" role="status" hidden></p>
-      <button class="enrollment-submit" type="submit">Save feedback</button>
+  <dialog class="feedback-dialog feedback-workspace" aria-labelledby="feedback-title">
+    <div class="feedback-heading"><h2 id="feedback-title">Your feedback</h2><button class="feedback-close" type="button" aria-label="Close feedback">×</button></div>
+    <form id="platform-rating-form" class="feedback-section">
+      <fieldset class="platform-rating-fieldset">
+        <legend>Overall, how would you rate Dramify?</legend>
+        <p id="platform-rating-help">Choose a number from 1 to 10.</p>
+        <div class="platform-rating-options" aria-describedby="platform-rating-help">
+          <label><input type="radio" name="platformRating" value="1" required><span>1</span></label>
+          <label><input type="radio" name="platformRating" value="2" required><span>2</span></label>
+          <label><input type="radio" name="platformRating" value="3" required><span>3</span></label>
+          <label><input type="radio" name="platformRating" value="4" required><span>4</span></label>
+          <label><input type="radio" name="platformRating" value="5" required><span>5</span></label>
+          <label><input type="radio" name="platformRating" value="6" required><span>6</span></label>
+          <label><input type="radio" name="platformRating" value="7" required><span>7</span></label>
+          <label><input type="radio" name="platformRating" value="8" required><span>8</span></label>
+          <label><input type="radio" name="platformRating" value="9" required><span>9</span></label>
+          <label><input type="radio" name="platformRating" value="10" required><span>10</span></label>
+        </div>
+        <div class="platform-rating-endpoints"><span>1 = Very bad</span><span>10 = Very good</span></div>
+      </fieldset>
+      <div class="feedback-section-actions"><button class="rating-confirm" type="submit">Confirm</button><span class="rating-confirmed" role="status" hidden>✓ Confirmed</span><button class="rating-edit" type="button" hidden>Edit</button></div>
+      <p class="platform-rating-status" role="alert" hidden></p>
+    </form>
+    <form id="feedback-form" class="feedback-section comment-section">
+      <label for="feedback-text">Comment</label>
+      <p>Tell us what you think of Dramify.</p>
+      <textarea id="feedback-text" name="feedback" rows="5" maxlength="3000" required placeholder="What do you like? What could we improve?"></textarea>
+      <div class="feedback-section-actions"><button class="comment-confirm" type="submit">Confirm</button><span class="comment-confirmed" role="status" hidden>✓ Confirmed</span><button class="comment-edit" type="button" hidden>Edit</button></div>
+      <p class="feedback-status" role="alert" hidden></p>
     </form>
   </dialog>
 </body>

@@ -1,69 +1,55 @@
 # Dramify
 
-English desktop drama browsing page. Plain HTML, CSS and JavaScript; no build step or external dependencies.
+English desktop drama browser; plain HTML/CSS/JavaScript, no build step. Publish this whole folder to GitHub Pages root.
 
 ## Preview
 
-Open `index.html` directly, or serve this directory:
+Open `index.html`, or run `python3 -m http.server 8173` from this directory.
 
-```sh
-python3 -m http.server 8173
-```
+## Entry and assignment
 
-- Normal random assignment: `http://localhost:8173/`
-- Condition A: `http://localhost:8173/?condition=A`
-- Condition B: `http://localhost:8173/?condition=B`
+Registration has two steps: nickname + access code, then gender / age / country. The country field is a dropdown. Access codes are configured in `config.js`:
 
-First-time visitors complete the English registration form (nickname, gender, age, country). The profile, generated participant ID, registration time and one condition are saved together under localStorage key `dramify.participant.v1`. Returning visits reuse the saved condition. The first entry selects the 16 complete image/title pairs and applies Fisher–Yates once. The resulting ID order is saved as `dramaOrder` in the participant record. Later entries restore this exact order. Watchlist and search only affect the current view; they do not change assignment or order. Watchlist resets on reload.
+- `20266202`: Condition A (odd IDs a, even IDs b).
+- `62022026`: Condition B (odd IDs b, even IDs a).
 
-Read `window.dramifyCondition` and `window.dramifyOrder` for integration. Neither is displayed in the interface. URL overrides accept only uppercase A or B when enrolling a new participant; other values use random assignment. A saved participant condition always takes precedence over URL overrides. To test the other condition, use a separate browser profile or clear only the `dramify.participant.v1` localStorage entry in developer tools.
+Assignment is determined by the submitted access code, not randomization or URL parameters. A returning participant entering the other valid code changes condition but retains ID, drama order and wallet. Existing sessions from the previous one-code configuration must enter a new valid code. The complete 16-drama ID order is shuffled once and saved, then restored across reloads. Image/title pairs always remain linked. `window.dramifyCondition` and `window.dramifyOrder` expose the displayed assignment and order.
 
-## Files and deployment
+The right header profile control edits demographics without resetting the wallet or order. Browsing History is intentionally empty. Sign out asks for confirmation, then deletes the local participant record (including wallet, pre-orders and order), associated feedback and access session. It shows the completion code (`skmxbueo`, configurable as `completionCode`) with a copy control, without a return button. Refresh starts registration again.
 
-Publish this entire directory, including `图像资源`, as a GitHub Pages site. All paths are relative; no bundler, server API, login, or routing is required. Existing artwork and filenames are preserved. This task does not publish to a remote repository.
+## Wallet
 
-Per the revised design request, artwork is stretched to fill equal 2:3 frames using CSS object-fit: fill. Original image files remain unchanged. Titles use identical 78px areas and buttons have equal sizes. The left sidebar switches between all dramas and My Watchlist without navigation or re-randomization.
+Wallet receives 100 coins once per locally registered participant, including migration of older profiles without a wallet. Each confirmed pre-order costs 20 coins. Home cards show Pre-order, with a confirmation dialog before charging. Confirmed Home cards show a disabled Pre-ordered state. Only My Watchlist offers Cancel pre-order, with a second confirmation and a 20-coin refund. Dismissing either confirmation makes no changes. Re-ordering costs 20 coins again. The Wallet navigation control shows the live balance. Insufficient balance prevents additions. Balance, watchlist and coin activity are saved together, and failed writes do not deduct coins. Refreshes and profile edits preserve them.
 
-## Verification
+## Local records and limits
 
-- JavaScript syntax check passed.
-- Both forced conditions checked against all 32 title mappings in the supplied specification.
-- Verified 16 unique IDs per condition, matching filenames, matching image alt text, and existing artwork files.
-- Exercised every card's watchlist toggle in both conditions, search filtering, and the header watchlist filter in a DOM test harness.
-- 2,000 simulated random page loads: A 949 / B 1,051; 2,000 unique orders.
-- Inspected a contact sheet of all 32 source images and the original logo.
-- Browser automation returned a session error; final browser rendering, image network loading, title overflow, and manual A/B visual checks remain unverified. Preview is available for review.
+- `localStorage["dramify.participant.v1"]`: ID, demographics, condition, fixed dramaOrder and wallet (balance, watchlist, transactions).
+- `localStorage["dramify.feedback.v1"]`: feedback with participant ID, condition and timestamp.
+- `sessionStorage["dramify.access.v1"]`: active tab access session.
+- `sessionStorage["dramify.completed.v1"]`: completion-screen state.
 
-## Participant storage limitations
+Five-star Want to watch ratings currently remain in page memory. No participant or behavior data is transmitted to a database yet. Records are browser-local and can be reset by clearing site storage. Access codes and coin balances are client-side controls, not server-enforced authentication or accounting. A backend is required for enforceable rules and centralized research collection. Recommendation copy does not implement demographic-based recommendations.
 
-Registration is browser-local only. No demographic information or behavior is sent to a server, and the site owner cannot centrally access other visitors' records yet. A database/collection endpoint is still required for research data collection. Clearing site data, private browsing sessions, changing browser/device, or changing the site origin can create a new participant and assignment. Nicknames are display values, not authenticated identities. Both poster order and the participant's A/B condition stay fixed across reloads and sign out / re-entry.
+## Artwork and validation
 
-Registration logic was checked for first entry, profile validation, 25 reloads with stable ID and condition, saved condition precedence over URL parameters, new participant creation, storage failure, and malformed saved data. Browser visual verification remains outstanding.
+Source artwork is unchanged. Home posters are stretched to a consistent display size, with height shortened 15% per the revised request. The supplied banner is displayed without cropping. The Home grid, watchlist rows and wallet share the same assigned image/title pairs.
 
-## Updated onboarding and feedback
+Logic checks cover both code mappings and invalid/old code rejection, restored sessions, changing code without resetting ID/order/wallet, fixed 16-ID order, one-time 100-coin bonus, five 20-coin additions, insufficient balance, confirmed cancellation with refund, refresh restoration, storage-failure rollback, navigation and profile edits. Final browser visual QA remains outstanding.
 
-Onboarding now has two steps: nickname, then gender / age / country. Country is a dropdown of English country/region labels with stored two-letter country codes. Existing participant records remain supported. The header shows the saved nickname using textContent. Sidebar Feedback opens a modal text form; entries are stored in `dramify.feedback.v1` with participant ID, condition and timestamp. No feedback is transmitted to a server. To see onboarding again after registering, use a separate browser profile or clear `dramify.participant.v1` in developer tools.
+For the access-code and wallet update, deploy `config.js`, `enrollment.js`, `script.js`, `index.html`, and `style.css`.
 
-The recommendation text is presentation copy; demographic-based recommendations are not implemented. Experimental A/B assignment remains random and independent of demographics.
+## Pre-order interface update
 
-## Access code and sign out
+Home promotional copy describes upcoming dramas and 20-coin advance reservations with full-series access on release. My Watchlist uses a cassette icon. Updated files for this change: index.html, style.css and script.js. Logic tests cover both confirmation dismissals, home cancellation prevention, watchlist cancellation, refunds, live balance, duplicate confirmation, insufficient balance and save failures. No actual streaming entitlement or server payment processing is implemented.
 
-Change the `accessCode` string in `config.js` to another exactly eight-digit value and redeploy to update the entry code. Current initial code: `20261018`. Code validation is a front-end convenience gate only; scripts and artwork remain publicly accessible on GitHub Pages. Server-side authentication is required for enforceable access restrictions.
+## Refund migration and upcoming banner
 
-A new participant enters nickname and Access code on step one, then completes demographics. Returning participants without an active tab session enter only the code; their nickname, ID and A/B condition are retained. Refreshes in the current session reuse the saved assignment. A changed configured code invalidates an old session on the next load of the updated configuration. Sign out removes `dramify.access.v1` from sessionStorage and reloads the entry screen, without deleting the participant record or feedback. Access codes are not stored with demographic records or feedback entries.
+Wallet policy version 2 reconciles old balances to 100 minus 20 per active pre-order. Correction transactions are recorded once when needed. Cancelling each pre-order refunds 20 coins; cancelling all restores 100. Old no-refund data with an empty watchlist now restores 100 on entry. Homepage heading and promotional paragraph are replaced with 图像资源/预告banner.png; other view headings remain. Versioned asset URLs request the updated scripts and CSS. Deploy index.html, script.js, style.css and 图像资源/预告banner.png together.
 
-The feedback success message is `Thank you! Your feedback has been saved.` Storage is still browser-local.
+## Latest sign-out and Home changes
 
-Checked: wrong code rejected, changed code invalidates old sessions, sign out returns to entry and preserves participant ID and condition, and return with the new code restores the same condition.
+Home displays only 图像资源/预告banner.png. Confirmed sign out deletes the local user; dismissing leaves the user unchanged. The completion screen is not restored on refresh. Logic checks cover deletion confirmation, associated feedback cleanup, completion code display and fresh registration after refresh, plus pre-order/refund regression checks. Deploy index.html, script.js and enrollment.js.
 
-## Fixed participant order
+## Platform evaluation
 
-`dramaOrder` contains exactly 16 unique integer IDs (1–16). New participants receive one shuffled order. Older records without it receive and save an order on their next entry. Malformed orders are replaced with a valid shuffled order. If saving fails, the app remains behind the entry screen with an error instead of showing an unsaved order. The saved ID order is combined with the participant's fixed condition to preserve complete image/title pairs. `window.dramifyOrder` exposes the restored displayed order.
-
-## Sign-out key code
-
-Sign out now opens a completion screen showing `completionCode` from `config.js` (initial value `skmxbueo`) with a copy control and a Back to sign in action. The screen persists across refreshes in the same tab using `dramify.completed.v1` in sessionStorage. Sign out preserves the participant profile and drama order; it does not certify that research data has been uploaded. Upload updated config.js, enrollment.js, index.html and style.css to deploy this change.
-
-## Profile and history navigation
-
-The header profile control opens an editable nickname, gender, age and country form. Saving updates the existing participant record while preserving ID, condition, registration time and dramaOrder. Browsing History is an intentionally empty view and does not collect browsing events. Removed the Genre control and updated entry and empty-watchlist copy. Deploy index.html, style.css, script.js and enrollment.js for these changes.
+Feedback opens a single wide dialog with rating above Comment. The 1–10 rating (1 = Very bad, 10 = Very good) and comment each have a separate Confirm button. Confirm saves that section, shows Confirmed, locks the field and exposes Edit without closing the dialog. X closes it; Escape is prevented. Reopening or refreshing restores the most recent saved rating/comment for the participant. Edit enables that section for reconfirmation; unconfirmed edits are discarded on reopen. Both sections update one record and may be confirmed independently. Confirmed sign out removes the participant's feedback. Deploy index.html, enrollment.js and style.css for this update.

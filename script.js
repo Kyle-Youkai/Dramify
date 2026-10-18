@@ -180,11 +180,6 @@ const dramas = [
   }
 ];
 
-function assignCondition() {
-  const requested = new URLSearchParams(window.location.search).get("condition");
-  return requested === "A" || requested === "B" ? requested : Math.random() < 0.5 ? "A" : "B";
-}
-
 function selectStimuli(condition) {
   return dramas.map(drama => {
     const version = (drama.id % 2 === 1) === (condition === "A") ? "a" : "b";
@@ -223,7 +218,37 @@ if (validOrder) {
 }
 window.dramifyCondition = condition;
 window.dramifyOrder = displayedDramas.map(drama => drama.id);
-const watchlist = new Set();
+function validWallet(value) {
+  return value && Number.isInteger(value.balance) && value.balance >= 0 && value.balance <= 100
+    && Array.isArray(value.watchlist) && new Set(value.watchlist).size === value.watchlist.length
+    && value.watchlist.every(id => Number.isInteger(id) && id >= 1 && id <= 16)
+    && value.watchlist.length <= 5 && Array.isArray(value.transactions);
+}
+if (participant.wallet && !validWallet(participant.wallet)) throw new Error("Invalid wallet");
+if (!participant.wallet) {
+  const wallet = { policyVersion: 2, balance: 100, watchlist: [], transactions: [{ type: "registration", amount: 100, at: new Date().toISOString() }] };
+  const latest = JSON.parse(localStorage.getItem("dramify.participant.v1") || "null") || participant;
+  if (latest.id !== participant.id) throw new Error("Participant changed");
+  localStorage.setItem("dramify.participant.v1", JSON.stringify({ ...latest, wallet }));
+  participant.wallet = wallet;
+}
+// Reconcile records created by the earlier no-refund policy. The balance is
+// always the 100-coin grant minus 20 for each currently active pre-order.
+function reconcileWallet(value) {
+  const balance = 100 - 20 * value.watchlist.length;
+  const result = { ...value, policyVersion: 2, balance, transactions: [...value.transactions] };
+  if (balance !== value.balance) result.transactions.push({type:"balance_correction",amount:balance - value.balance,at:new Date().toISOString()});
+  return result;
+}
+const reconciledWallet = reconcileWallet(participant.wallet);
+if (participant.wallet.policyVersion !== 2 || participant.wallet.balance !== reconciledWallet.balance) {
+  const latest = JSON.parse(localStorage.getItem("dramify.participant.v1"));
+  if (!latest || latest.id !== participant.id) throw new Error("Participant changed");
+  localStorage.setItem("dramify.participant.v1", JSON.stringify({ ...latest, wallet: reconciledWallet }));
+  participant.wallet = reconciledWallet;
+}
+let wallet = participant.wallet;
+const watchlist = new Set(wallet.watchlist);
 const interestRatings = new Map();
 const grid = document.querySelector(".drama-grid");
 const search = document.querySelector("input[type=search]");
@@ -233,9 +258,113 @@ let watchlistOnly = false;
 let currentView = "home";
 const historyButton = document.querySelector(".history-button");
 const historyView = document.querySelector(".history-view");
+const walletButton = document.querySelector(".wallet-button");
+const walletView = document.querySelector(".wallet-view");
+const walletNotice = document.querySelector(".wallet-notice");
+const preorderDialog = document.querySelector(".preorder-only-dialog");
+let pendingPreorder = null;
+function requestPreorder(drama) {
+  const selected = watchlist.has(drama.id);
+  if (selected && currentView !== "watchlist") return;
+  pendingPreorder = { drama, action: selected ? "cancel" : "add" };
+  document.querySelector("#preorder-confirm-title").textContent = selected ? "Cancel pre-order?" : "Confirm pre-order";
+  document.querySelector("#preorder-confirm-description").textContent = selected
+    ? `Cancel your pre-order for “${drama.title}”? 20 coins will be returned to your wallet.`
+    : `Confirm pre-order of “${drama.title}” for 20 coins?`;
+  document.querySelector(".preorder-only-dialog .preorder-confirm").textContent = selected ? "Confirm cancellation" : "Confirm pre-order";
+  document.querySelector(".preorder-dismiss").textContent = selected ? "Keep pre-order" : "Not now";
+  preorderDialog.showModal();
+}
+document.querySelector(".preorder-dismiss").addEventListener("click", () => { pendingPreorder = null; preorderDialog.close(); });
+preorderDialog.addEventListener("cancel", () => { pendingPreorder = null; });
+document.querySelector(".preorder-only-dialog .preorder-confirm").addEventListener("click", () => {
+  if (!pendingPreorder) return;
+  const { drama, action } = pendingPreorder;
+  pendingPreorder = null;
+  preorderDialog.close();
+  commitPreorder(drama, action);
+});
+
+function showWalletNotice(message) {
+  walletNotice.textContent = message;
+  walletNotice.hidden = false;
+}
+function renderWallet() {
+  document.querySelector(".wallet-balance").textContent = String(wallet.balance);
+  document.querySelector(".sidebar-balance").textContent = `${wallet.balance} coins`;
+  const rows = wallet.transactions.map(transaction => {
+    const row = document.createElement("div");
+    row.className = "wallet-transaction";
+    const label = document.createElement("span");
+    label.textContent = transaction.type === "balance_correction" ? "Refund balance correction" : transaction.type === "registration" ? "Registration bonus"
+      : `${transaction.type === "preorder_cancel" ? "Pre-order cancelled" : "Pre-ordered"}: ${displayedDramas.find(drama => drama.id === transaction.dramaId)?.title || "Drama"}`;
+    const amount = document.createElement("strong");
+    amount.textContent = `${transaction.amount > 0 ? "+" : ""}${transaction.amount} coins`;
+    row.append(label, amount);
+    return row;
+  });
+  document.querySelector(".wallet-transactions").replaceChildren(...rows);
+}
+function updateWatchlistButtons() {
+  for (const card of grid.children) {
+    const selected = watchlist.has(Number(card.dataset.id));
+    const button = card.querySelector("button");
+    button.setAttribute("aria-pressed", String(selected));
+    button.textContent = selected ? (currentView === "watchlist" ? "Cancel pre-order" : "✓ Pre-ordered") : "Pre-order";
+    button.disabled = selected && currentView !== "watchlist";
+  }
+}
+function commitPreorder(drama, action) {
+  try {
+    const latest = JSON.parse(localStorage.getItem("dramify.participant.v1"));
+    if (!latest || latest.id !== participant.id || !validWallet(latest.wallet)) throw new Error("Invalid record");
+    const next = reconcileWallet(latest.wallet);
+    next.watchlist = [...latest.wallet.watchlist];
+    const existing = next.watchlist.indexOf(drama.id);
+    if ((action === "add" && existing >= 0) || (action === "cancel" && existing < 0)) {
+      wallet = latest.wallet;
+      watchlist.clear();
+      wallet.watchlist.forEach(id => watchlist.add(id));
+      updateWatchlistButtons(); renderWallet(); applyFilters();
+      showWalletNotice("This pre-order has already been updated. Your balance has not changed.");
+      return;
+    }
+    if (action === "cancel") {
+      if (currentView !== "watchlist") return;
+      next.watchlist.splice(existing, 1);
+      const refund = 20;
+      next.balance += refund;
+      next.transactions.push({type:"preorder_cancel", dramaId:drama.id, amount:refund, at:new Date().toISOString()});
+    } else {
+      if (next.balance < 20) {
+        wallet = latest.wallet;
+        watchlist.clear();
+        wallet.watchlist.forEach(id => watchlist.add(id));
+        updateWatchlistButtons();
+        renderWallet();
+        applyFilters();
+        showWalletNotice("Not enough coins. You need 20 coins to pre-order a drama.");
+        return;
+      }
+      next.balance -= 20;
+      next.watchlist.push(drama.id);
+      next.transactions.push({ type: "preorder_add", dramaId: drama.id, amount: -20, at: new Date().toISOString() });
+    }
+    localStorage.setItem("dramify.participant.v1", JSON.stringify({ ...latest, wallet: next }));
+    wallet = next;
+    watchlist.clear();
+    wallet.watchlist.forEach(id => watchlist.add(id));
+    updateWatchlistButtons();
+    renderWallet();
+    walletNotice.hidden = true;
+    applyFilters();
+  } catch (error) {
+    showWalletNotice("Your change could not be saved. Please allow browser storage and try again. No coins were deducted.");
+  }
+}
 
 function applyFilters() {
-  if (currentView === "history") {
+  if (currentView === "history" || currentView === "wallet") {
     document.querySelector(".empty-message").hidden = true;
     return;
   }
@@ -277,16 +406,11 @@ function renderCard(drama) {
   const button = document.createElement("button");
   button.className = "card-watchlist";
   button.type = "button";
-  button.textContent = "+ My Watchlist";
-  button.setAttribute("aria-pressed", "false");
-  button.addEventListener("click", () => {
-    if (watchlist.has(drama.id)) watchlist.delete(drama.id);
-    else watchlist.add(drama.id);
-    const selected = watchlist.has(drama.id);
-    button.setAttribute("aria-pressed", String(selected));
-    button.textContent = selected ? "✓ In My Watchlist" : "+ My Watchlist";
-    applyFilters();
-  });
+  const selected = watchlist.has(drama.id);
+  button.textContent = selected ? "✓ Pre-ordered" : "Pre-order";
+  button.disabled = selected;
+  button.setAttribute("aria-pressed", String(selected));
+  button.addEventListener("click", () => requestPreorder(drama));
   const rating = document.createElement("div");
   rating.className = "interest-rating";
   const ratingLabel = document.createElement("span");
@@ -337,33 +461,30 @@ function renderCard(drama) {
 
 grid.replaceChildren(...displayedDramas.map(renderCard));
 search.addEventListener("input", applyFilters);
-function setWatchlistView(selected) {
-  watchlistOnly = selected;
-  currentView = selected ? "watchlist" : "home";
-  historyButton.setAttribute("aria-pressed", "false");
-  historyView.hidden = true;
-  grid.hidden = false;
-  document.querySelector(".home-banner").hidden = selected;
-  grid.className = selected ? "drama-grid watchlist-view" : "drama-grid";
-  filterButton.setAttribute("aria-pressed", String(selected));
-  browseButton.setAttribute("aria-pressed", String(!selected));
-  document.querySelector("main h1").textContent = selected ? "My Watchlist" : "New On Dramify";
-  grid.setAttribute("aria-label", selected ? "My Watchlist" : "New dramas");
+renderWallet();
+updateWatchlistButtons();
+function setView(view) {
+  currentView = view;
+  watchlistOnly = view === "watchlist";
+  historyButton.setAttribute("aria-pressed", String(view === "history"));
+  walletButton.setAttribute("aria-pressed", String(view === "wallet"));
+  filterButton.setAttribute("aria-pressed", String(watchlistOnly));
+  browseButton.setAttribute("aria-pressed", String(view === "home"));
+  historyView.hidden = view !== "history";
+  walletView.hidden = view !== "wallet";
+  grid.hidden = view === "history" || view === "wallet";
+  grid.className = watchlistOnly ? "drama-grid watchlist-view" : "drama-grid";
+  const headings = {home:"",watchlist:"My Watchlist",history:"Browsing History",wallet:"Wallet"};
+  document.querySelector("main h1").textContent = headings[view];
+  grid.setAttribute("aria-label", watchlistOnly ? "My Watchlist" : "New dramas");
+  walletNotice.hidden = true;
+  document.querySelector(".upcoming-banner").hidden = view !== "home";
+  document.querySelector(".section-heading").hidden = view === "home";
+  updateWatchlistButtons();
   applyFilters();
 }
-
-filterButton.addEventListener("click", () => setWatchlistView(true));
-browseButton.addEventListener("click", () => setWatchlistView(false));
-historyButton.addEventListener("click", () => {
-  currentView = "history";
-  historyButton.setAttribute("aria-pressed", "true");
-  filterButton.setAttribute("aria-pressed", "false");
-  browseButton.setAttribute("aria-pressed", "false");
-  document.querySelector("main h1").textContent = "Browsing History";
-  document.querySelector(".home-banner").hidden = true;
-  grid.hidden = true;
-  historyView.hidden = false;
-  applyFilters();
-});
-
+filterButton.addEventListener("click", () => setView("watchlist"));
+browseButton.addEventListener("click", () => setView("home"));
+historyButton.addEventListener("click", () => setView("history"));
+walletButton.addEventListener("click", () => setView("wallet"));
 }
