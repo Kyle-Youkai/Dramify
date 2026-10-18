@@ -1,0 +1,171 @@
+"use strict";
+
+// Only the public project key is shipped to the browser. RLS authenticates each
+// participant through Supabase anonymous Auth; no service-role key is used.
+window.DramifyCloud = (() => {
+  const profileKey = "dramify.participant.v1";
+  const authStorageKey = "dramify.supabase.auth";
+  let participantId = null;
+  let client = null;
+  let authReady = null;
+  let lastTick = 0;
+  let interval = null;
+  let timer = null;
+  let queue = Promise.resolve();
+  let finishing = false;
+  let stopped = true;
+
+  function readParticipant() {
+    const record = JSON.parse(localStorage.getItem(profileKey) || "null");
+    if (!record || record.id !== participantId) throw new Error("Participant changed");
+    return record;
+  }
+  function showFailure(failed) {
+    const notice = document.querySelector(".data-sync-notice");
+    if (notice) notice.hidden = !failed;
+  }
+  function checkpoint() {
+    if (stopped || finishing) return;
+    const now = performance.now();
+    const record = readParticipant();
+    const elapsed = Math.max(0, (now - lastTick) / 1000);
+    record.durationSeconds = Math.max(0, Number(record.durationSeconds) || 0) + elapsed;
+    localStorage.setItem(profileKey, JSON.stringify(record));
+    lastTick = now;
+  }
+  function buildSnapshot(record, userId, completed) {
+    const feedbackEntries = JSON.parse(localStorage.getItem("dramify.feedback.v1") || "[]");
+    if (!Array.isArray(feedbackEntries)) throw new Error("Invalid feedback records");
+    const feedback = feedbackEntries.filter(entry => entry.participantId === record.id).at(-1);
+    const code = Object.entries(window.DRAMIFY_CONFIG.accessCodes).find(([, condition]) => condition === record.condition)?.[0];
+    if (!code || !Array.isArray(record.dramaOrder) || record.dramaOrder.length !== 16) throw new Error("Invalid assignment");
+    const choices = new Set(record.wallet?.watchlist || []);
+    const stimuli = {};
+    for (let id = 1; id <= 16; id++) {
+      const version = (id % 2 === 1) === (record.condition === "A") ? "a" : "b";
+      const key = `${id}${version}`;
+      const rating = record.dramaRatings?.[key];
+      stimuli[key] = {choice: choices.has(id) ? 1 : 0, rating: Number.isInteger(rating) && rating >= 1 && rating <= 5 ? rating : null};
+    }
+    return {
+      id: record.id,
+      auth_user_id: userId,
+      access_code: code,
+      nickname: record.nickname,
+      gender: record.gender,
+      age: record.age,
+      country: record.country,
+      duration_seconds: Math.round((Number(record.durationSeconds) || 0) * 1000) / 1000,
+      app_rating: Number.isInteger(feedback?.rating) ? feedback.rating : null,
+      comment: feedback?.text || "",
+      drama_order: record.dramaOrder,
+      stimuli,
+      completed: Boolean(completed),
+      updated_at: new Date().toISOString()
+    };
+  }
+  async function ensureAuth() {
+    if (!authReady) {
+      authReady = (async () => {
+        if (!window.supabase?.createClient) throw new Error("Supabase client unavailable");
+        if (!client) client = window.supabase.createClient(window.DRAMIFY_CONFIG.supabase.url, window.DRAMIFY_CONFIG.supabase.publishableKey, {
+          auth:{storageKey:authStorageKey, persistSession:true, autoRefreshToken:true, detectSessionInUrl:false}
+        });
+        const record = readParticipant();
+        const {data:sessionData,error:sessionError} = await client.auth.getSession();
+        if (sessionError) throw sessionError;
+        let user = sessionData.session?.user;
+        if (record.cloudAuthId && user?.id !== record.cloudAuthId) throw new Error("Saved authentication is unavailable; do not clear browser data");
+        // A new local participant must not overwrite a previous participant's row.
+        if (user && !record.cloudAuthId) {
+          const {data,error} = await client.from("dramify_responses").select("id").eq("auth_user_id",user.id).maybeSingle();
+          if (error) throw error;
+          if (data && data.id !== record.id) {
+            const {error:signoutError} = await client.auth.signOut({scope:"local"});
+            if (signoutError) throw signoutError;
+            user = null;
+          }
+        }
+        if (!user) {
+          const {data,error} = await client.auth.signInAnonymously();
+          if (error) throw error;
+          user = data.user;
+        }
+        if (!user) throw new Error("Anonymous sign-in did not return a user");
+        const latest = readParticipant();
+        localStorage.setItem(profileKey, JSON.stringify({...latest,cloudAuthId:user.id}));
+        return user.id;
+      })().catch(error => { authReady = null; throw error; });
+    }
+    return authReady;
+  }
+  function flush(completed = false) {
+    if (stopped) return Promise.resolve();
+    // Serialize writes. Read a fresh snapshot when a request actually executes,
+    // so an earlier request cannot overwrite a more recent choice or rating.
+    const work = queue.catch(() => {}).then(async () => {
+      const userId = await ensureAuth();
+      const record = readParticipant();
+      const row = buildSnapshot(record,userId,completed);
+      const {error} = await client.from("dramify_responses").upsert(row,{onConflict:"id"});
+      if (error) throw error;
+      showFailure(false);
+    });
+    queue = work;
+    return work.catch(error => {
+      showFailure(true);
+      console.warn("Dramify sync failed:",error.message || "Connection error");
+      throw error;
+    });
+  }
+  function changed() {
+    if (stopped || finishing) return;
+    try { checkpoint(); } catch (error) {showFailure(true);return;}
+    clearTimeout(timer);
+    timer = setTimeout(() => {flush().catch(() => {});},250);
+  }
+  function start(participant) {
+    if (!stopped) return;
+    participantId = participant.id;
+    stopped = false;
+    lastTick = performance.now();
+    interval = setInterval(() => {
+      if (stopped || finishing) return;
+      try {checkpoint();flush().catch(() => {});} catch (error) {showFailure(true);}
+    },10000);
+    flush().catch(() => {});
+  }
+  async function complete() {
+    if (stopped && finishing) return;
+    if (stopped) throw new Error("Cloud collection has not started");
+    checkpoint();
+    finishing = true;
+    clearTimeout(timer);
+    try {
+      await flush(true);
+    } catch (error) {
+      finishing = false;
+      lastTick = performance.now();
+      throw error;
+    }
+    stopped = true;
+    clearInterval(interval);
+  }
+  async function clearSession() {
+    // The final row remains in the database. Only local authentication is reset.
+    try {if(client)await client.auth.signOut({scope:"local"});} catch (error) { /* Data is already saved. */ }
+    try {localStorage.removeItem(authStorageKey);} catch (error) { /* The upload remains complete even if storage cleanup is blocked. */ }
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") changed();
+  });
+  window.addEventListener("pagehide", () => {
+    // Local checkpoint is synchronous. The regular heartbeats, rather than an
+    // unreliable unload request, provide the primary cloud duration updates.
+    if (!stopped && !finishing) {try {checkpoint();} catch (error) {showFailure(true);}}
+  });
+  window.addEventListener("pageshow",event => {if(event.persisted && !stopped)lastTick=performance.now();});
+  window.addEventListener("online",changed);
+  document.querySelector(".data-sync-retry")?.addEventListener("click",changed);
+  return {start,changed,complete,clearSession};
+})();

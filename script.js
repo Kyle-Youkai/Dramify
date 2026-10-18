@@ -249,7 +249,7 @@ if (participant.wallet.policyVersion !== 2 || participant.wallet.balance !== rec
 }
 let wallet = participant.wallet;
 const watchlist = new Set(wallet.watchlist);
-const interestRatings = new Map();
+const interestRatings = new Map(displayedDramas.filter(drama => Number.isInteger(participant.dramaRatings?.[`${drama.id}${drama.version}`])).map(drama => [drama.id, participant.dramaRatings[`${drama.id}${drama.version}`]]));
 const grid = document.querySelector(".drama-grid");
 const search = document.querySelector("input[type=search]");
 const filterButton = document.querySelector(".watchlist-filter");
@@ -372,6 +372,7 @@ function commitPreorder(drama, action) {
       next.transactions.push({ type: "preorder_add", dramaId: drama.id, amount: -20, at: new Date().toISOString() });
     }
     localStorage.setItem("dramify.participant.v1", JSON.stringify({ ...latest, wallet: next }));
+    window.DramifyCloud.changed();
     wallet = next;
     watchlist.clear();
     wallet.watchlist.forEach(id => watchlist.add(id));
@@ -464,6 +465,18 @@ function renderCard(drama) {
     star.addEventListener("blur", () => paintStars(interestRatings.get(drama.id) || 0));
     star.addEventListener("click", () => {
       const next = interestRatings.get(drama.id) === value ? 0 : value;
+      try {
+        const latest = JSON.parse(localStorage.getItem("dramify.participant.v1"));
+        if (!latest || latest.id !== participant.id) throw new Error("Participant changed");
+        const ratings = { ...latest.dramaRatings };
+        if (next) ratings[`${drama.id}${drama.version}`] = next;
+        else delete ratings[`${drama.id}${drama.version}`];
+        localStorage.setItem("dramify.participant.v1", JSON.stringify({ ...latest, dramaRatings: ratings }));
+        window.DramifyCloud.changed();
+      } catch (error) {
+        showWalletNotice("Your rating could not be saved. Please try again.");
+        return;
+      }
       if (next) interestRatings.set(drama.id, next);
       else interestRatings.delete(drama.id);
       paintStars(next);
@@ -474,6 +487,10 @@ function renderCard(drama) {
     });
     stars.append(star);
   }
+  const savedRating = interestRatings.get(drama.id) || 0;
+  paintStars(savedRating);
+  for (let i = 0; i < stars.children.length; i++) stars.children[i].setAttribute("aria-pressed", String(i + 1 === savedRating));
+  status.textContent = savedRating ? `${savedRating} / 5` : "Not rated";
   stars.addEventListener("mouseleave", () => paintStars(interestRatings.get(drama.id) || 0));
   rating.append(ratingLabel, stars, status);
   card.append(artwork, title, button, rating);

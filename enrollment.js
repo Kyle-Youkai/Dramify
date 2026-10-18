@@ -85,6 +85,7 @@ function enterDramify(participant, code) {
   document.querySelector(".enrollment").hidden = true;
   document.querySelector("#dramify-app").hidden = false;
   document.body.classList.remove("enrolling");
+  window.DramifyCloud.start(participant);
 }
 
 function showEnrollmentError(message) {
@@ -206,6 +207,7 @@ function saveFeedbackSection(patch) {
   entries[index] = { ...entries[index], ...patch, updatedAt:now };
   localStorage.setItem("dramify.feedback.v1", JSON.stringify(entries));
   currentFeedbackId = entries[index].id;
+  window.DramifyCloud.changed();
 }
 document.querySelector(".feedback-open").addEventListener("click", () => {
   if (!activeParticipant) return;
@@ -295,8 +297,22 @@ document.querySelector(".sign-out").addEventListener("click", () => {
   signoutDialog.showModal();
 });
 document.querySelector(".signout-dismiss").addEventListener("click", () => signoutDialog.close());
-document.querySelector(".signout-confirm").addEventListener("click", () => {
+document.querySelector(".signout-confirm").addEventListener("click", async () => {
   if (!activeParticipant) return;
+  const confirmButton = document.querySelector(".signout-confirm");
+  if (confirmButton.disabled) return;
+  confirmButton.disabled = true;
+  confirmButton.textContent = "Saving…";
+  try {
+    await window.DramifyCloud.complete();
+  } catch (error) {
+    const message = document.querySelector(".signout-error");
+    message.textContent = "Your responses have not synced yet. Please check your connection and try again. Your data is still saved on this device.";
+    message.hidden = false;
+    confirmButton.disabled = false;
+    confirmButton.textContent = "Confirm sign out";
+    return;
+  }
   try {
     const stored = JSON.parse(localStorage.getItem(PARTICIPANT_STORAGE_KEY) || "null");
     if (stored && stored.id !== activeParticipant.id) throw new Error("Participant changed");
@@ -313,8 +329,11 @@ document.querySelector(".signout-confirm").addEventListener("click", () => {
     const message = document.querySelector(".signout-error");
     message.textContent = "We could not delete your saved data. Please allow browser storage and try again.";
     message.hidden = false;
+    confirmButton.disabled = false;
+    confirmButton.textContent = "Confirm sign out";
     return;
   }
+  await window.DramifyCloud.clearSession();
   activeParticipant = null;
   returningParticipant = null;
   signoutDialog.close();
@@ -394,5 +413,6 @@ profileForm.addEventListener("submit", event => {
   nicknameInput.value = updated.nickname;
   document.querySelector(".user-nickname").textContent = updated.nickname;
   document.querySelector(".user-profile").title = updated.nickname;
+  window.DramifyCloud.changed();
   profileDialog.close();
 });

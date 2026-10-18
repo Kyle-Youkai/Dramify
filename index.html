@@ -5,10 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Discover what's new on Dramify and keep your next favorite drama in My Watchlist.">
   <title>Dramify</title>
-  <link rel="stylesheet" href="style.css?v=20261018-coins6">
-  <script src="config.js?v=20261018-coins6" defer></script>
-  <script src="script.js?v=20261018-coins6" defer></script>
-  <script src="enrollment.js?v=20261018-coins6" defer></script>
+  <link rel="stylesheet" href="style.css?v=20261018-cloud1">
+  <script src="config.js?v=20261018-cloud1" defer></script>
+  <script src="vendor/supabase.js" defer></script>
+  <script src="cloud.js?v=20261018-cloud1" defer></script>
+  <script src="script.js?v=20261018-cloud1" defer></script>
+  <script src="enrollment.js?v=20261018-cloud1" defer></script>
 </head>
 <body class="enrolling">
   <section class="enrollment" aria-labelledby="welcome-title">
@@ -81,6 +83,7 @@
     </div>
   </header>
   <main>
+    <div class="data-sync-notice" role="status" hidden><span>Your changes are saved on this device but have not synced yet. Please check your connection.</span> <button class="data-sync-retry" type="button">Retry</button></div>
     <div class="upcoming-banner"><img src="图像资源/预告banner.png" alt="Discover upcoming dramas. Pre-order for 20 coins and watch every episode for free when the drama premieres." width="2172" height="407"></div>
     <div class="section-heading" hidden><h1></h1><span class="heading-rule" aria-hidden="true"></span></div>
     <section class="drama-grid" aria-label="New dramas"></section>
@@ -103,7 +106,7 @@
   </dialog>
   <dialog class="signout-dialog preorder-dialog" aria-labelledby="signout-title" aria-describedby="signout-description">
     <h2 id="signout-title">Confirm sign out?</h2>
-    <p id="signout-description">This will delete your profile and saved data from this browser.</p>
+    <p id="signout-description">Your responses will be saved before you sign out. Your profile will then be removed from this browser.</p>
     <p class="signout-error" role="alert" hidden></p>
     <div class="preorder-dialog-actions"><button class="signout-dismiss" type="button">Stay on Dramify</button><button class="signout-confirm preorder-confirm" type="button">Confirm sign out</button></div>
   </dialog>
