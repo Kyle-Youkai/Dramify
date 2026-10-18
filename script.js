@@ -263,8 +263,29 @@ const walletView = document.querySelector(".wallet-view");
 const walletNotice = document.querySelector(".wallet-notice");
 const preorderDialog = document.querySelector(".preorder-only-dialog");
 let pendingPreorder = null;
+document.querySelector(".insufficient-coins-close").addEventListener("click", () => {
+  document.querySelector(".insufficient-coins-dialog").close();
+});
 function requestPreorder(drama) {
+  // Read the saved balance before opening a purchase confirmation.
+  try {
+    const latest = JSON.parse(localStorage.getItem("dramify.participant.v1"));
+    if (!latest || latest.id !== participant.id || !validWallet(latest.wallet)) throw new Error("Invalid wallet");
+    wallet = latest.wallet;
+    watchlist.clear();
+    wallet.watchlist.forEach(id => watchlist.add(id));
+    updateWatchlistButtons();
+    renderWallet();
+  } catch (error) {
+    showWalletNotice("Your balance could not be checked. Please refresh and try again.");
+    return;
+  }
   const selected = watchlist.has(drama.id);
+  if (!selected && wallet.balance < 20) {
+    pendingPreorder = null;
+    document.querySelector(".insufficient-coins-dialog").showModal();
+    return;
+  }
   if (selected && currentView !== "watchlist") return;
   pendingPreorder = { drama, action: selected ? "cancel" : "add" };
   document.querySelector("#preorder-confirm-title").textContent = selected ? "Cancel pre-order?" : "Confirm pre-order";

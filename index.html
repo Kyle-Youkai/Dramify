@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Discover what's new on Dramify and keep your next favorite drama in My Watchlist.">
   <title>Dramify</title>
-  <link rel="stylesheet" href="style.css?v=20261018-feedback5">
-  <script src="config.js?v=20261018-feedback5" defer></script>
-  <script src="script.js?v=20261018-feedback5" defer></script>
-  <script src="enrollment.js?v=20261018-feedback5" defer></script>
+  <link rel="stylesheet" href="style.css?v=20261018-coins6">
+  <script src="config.js?v=20261018-coins6" defer></script>
+  <script src="script.js?v=20261018-coins6" defer></script>
+  <script src="enrollment.js?v=20261018-coins6" defer></script>
 </head>
 <body class="enrolling">
   <section class="enrollment" aria-labelledby="welcome-title">
@@ -96,6 +96,11 @@
   </main>
   </div>
   </div>
+  <dialog class="insufficient-coins-dialog preorder-dialog" aria-labelledby="insufficient-coins-title" aria-describedby="insufficient-coins-description">
+    <h2 id="insufficient-coins-title">Not enough coins</h2>
+    <p id="insufficient-coins-description">You don't have enough coins. You need 20 coins to pre-order a drama.</p>
+    <div class="preorder-dialog-actions"><button class="insufficient-coins-close preorder-confirm" type="button">Got it</button></div>
+  </dialog>
   <dialog class="signout-dialog preorder-dialog" aria-labelledby="signout-title" aria-describedby="signout-description">
     <h2 id="signout-title">Confirm sign out?</h2>
     <p id="signout-description">This will delete your profile and saved data from this browser.</p>
