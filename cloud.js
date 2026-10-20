@@ -39,20 +39,40 @@ window.DramifyCloud = (() => {
     const feedback = feedbackEntries.filter(entry => entry.participantId === record.id).at(-1);
     const code = Object.entries(window.DRAMIFY_CONFIG.accessCodes).find(([, condition]) => condition === record.condition)?.[0];
     if (!code || !Array.isArray(record.dramaOrder) || record.dramaOrder.length !== 16) throw new Error("Invalid assignment");
-    const choices = new Set(record.wallet?.watchlist || []);
+    const choices = new Set(record.wallet?.unlocked || []);
     const stimuli = {};
     for (let id = 1; id <= 16; id++) {
       const version = (id % 2 === 1) === (record.condition === "A") ? "a" : "b";
       const key = `${id}${version}`;
       const rating = record.dramaRatings?.[key];
-      stimuli[key] = {choice: choices.has(id) ? 1 : 0, rating: Number.isInteger(rating) && rating >= 1 && rating <= 5 ? rating : null};
+      const behavior = record.behaviors?.[key] || {};
+      stimuli[key] = {
+        choice: choices.has(key) ? 1 : 0,
+        rating: Number.isInteger(rating) && rating >= 1 && rating <= 5 ? rating : null,
+        liked: behavior.liked ? 1 : 0, saved: behavior.saved ? 1 : 0, shared: behavior.shared ? 1 : 0,
+        views: behavior.viewCount || 0,
+        like_count: behavior.likedCount || 0, save_count: behavior.savedCount || 0, share_count: behavior.sharedCount || 0
+      };
+    }
+    const behaviorCounts = {liked:0,saved:0,shared:0,browsed:0,browse_visits:0,unlocked:0,like_actions:0,save_actions:0,share_actions:0};
+    for (const stimulus of Object.values(stimuli)) {
+      behaviorCounts.liked += stimulus.liked; behaviorCounts.saved += stimulus.saved; behaviorCounts.shared += stimulus.shared;
+      behaviorCounts.browsed += stimulus.views > 0 ? 1 : 0; behaviorCounts.browse_visits += stimulus.views;
+      behaviorCounts.unlocked += stimulus.choice; behaviorCounts.like_actions += stimulus.like_count;
+      behaviorCounts.save_actions += stimulus.save_count; behaviorCounts.share_actions += stimulus.share_count;
     }
     return {
+      interface_version: "watch-v3",
+      behavior_counts: behaviorCounts,
+      behavior_events: [
+        ...(record.behaviorEvents || []),
+        ...(record.job ? [{action:"profile_snapshot", job:record.job, at:record.updatedAt || record.createdAt}] : [])
+      ],
       id: record.id,
       auth_user_id: userId,
       access_code: code,
       nickname: record.nickname,
-      gender: record.gender,
+      gender: ({woman:"female", man:"male"})[record.gender] || record.gender,
       age: record.age,
       country: record.country,
       duration_seconds: Math.round((Number(record.durationSeconds) || 0) * 1000) / 1000,

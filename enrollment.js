@@ -6,6 +6,7 @@ const PARTICIPANT_STORAGE_KEY = "dramify.participant.v1";
 const participantForm = document.querySelector("#enrollment-form");
 const enrollmentError = document.querySelector("#enrollment-error");
 let siteStarted = false;
+let siteStarting = false;
 let activeParticipant = null;
 let enrollmentStep = 1;
 let returningParticipant = null;
@@ -23,17 +24,6 @@ function hasValidAccessCode() {
   return true;
 }
 const nicknameInput = document.querySelector("#participant-nickname");
-const countrySelect = document.querySelector("#participant-country");
-const countryCodes = "AF AX AL DZ AS AD AO AI AQ AG AR AM AW AU AT AZ BS BH BD BB BY BE BZ BJ BM BT BO BQ BA BW BV BR IO BN BG BF BI CV KH CM CA KY CF TD CL CN CX CC CO KM CG CD CK CR CI HR CU CW CY CZ DK DJ DM DO EC EG SV GQ ER EE SZ ET FK FO FJ FI FR GF PF TF GA GM GE DE GH GI GR GL GD GP GU GT GG GN GW GY HT HM VA HN HK HU IS IN ID IR IQ IE IM IL IT JM JP JE JO KZ KE KI KP KR KW KG LA LV LB LS LR LY LI LT LU MO MG MW MY MV ML MT MH MQ MR MU YT MX FM MD MC MN ME MS MA MZ MM NA NR NP NL NC NZ NI NE NG NU NF MK MP NO OM PK PW PS PA PG PY PE PH PN PL PT PR QA RE RO RU RW BL SH KN LC MF PM VC WS SM ST SA SN RS SC SL SG SX SK SI SB SO ZA GS SS ES LK SD SR SJ SE CH SY TW TJ TZ TH TL TG TK TO TT TN TR TM TC TV UG UA AE GB US UM UY UZ VU VE VN VG VI WF EH YE ZM ZW".split(" ");
-const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
-const countries = countryCodes.map(code => ({code, name: countryNames.of(code)})).sort((a, b) => a.name.localeCompare(b.name, "en"));
-for (const country of countries) {
-  const option = document.createElement("option");
-  option.value = country.code;
-  option.textContent = country.name;
-  countrySelect.append(option);
-}
-
 function showEnrollmentStep(step) {
   enrollmentStep = step;
   document.querySelector(".enrollment-instruction").hidden = step !== 1;
@@ -64,7 +54,29 @@ function isValidParticipant(value) {
     && (value.condition === "A" || value.condition === "B");
 }
 
-function enterDramify(participant, code) {
+async function enterDramify(participant, code) {
+  if (siteStarted || siteStarting) return;
+  siteStarting = true;
+  const button = document.querySelector(".enrollment-submit");
+  const label = button.textContent;
+  button.disabled = true;
+  button.textContent = "Loading…";
+  try {
+    await window.DramifyContent.load(dramas);
+    showDramify(participant, code);
+  } catch (error) {
+    showEnrollmentError(location.protocol === "file:"
+      ? "Please open this website using 启动网站.command in the Dramify folder, then try again."
+      : "We could not load the drama content. Please check the Excel file and your connection, then try again.");
+    console.warn("Dramify content:", error.message);
+  } finally {
+    siteStarting = false;
+    button.disabled = false;
+    button.textContent = label;
+  }
+}
+
+function showDramify(participant, code) {
   if (siteStarted) return;
   try {
     sessionStorage.setItem(ACCESS_SESSION_KEY, JSON.stringify({ participantId: participant.id, code, accessVersion: 2 }));
@@ -118,7 +130,7 @@ try {
 
 participantForm.addEventListener("submit", event => {
   event.preventDefault();
-  if (siteStarted) return;
+  if (siteStarted || siteStarting) return;
   if (enrollmentStep === 1) {
     if (!nicknameInput.reportValidity()) return;
     if (!nicknameInput.value.trim()) {
@@ -143,11 +155,10 @@ participantForm.addEventListener("submit", event => {
   if (!participantForm.reportValidity() || !hasValidAccessCode()) return;
   const data = new FormData(participantForm);
   const nickname = String(data.get("nickname") || "").trim();
-  const countryCode = String(data.get("country") || "");
-  const selectedCountry = countries.find(country => country.code === countryCode);
-  const country = selectedCountry ? selectedCountry.name : "";
-  if (!nickname || !country) {
-    showEnrollmentError("Please enter a nickname and country.");
+  const country = String(data.get("country") || "").trim();
+  const job = String(data.get("job") || "").trim();
+  if (!nickname || !country || !job) {
+    showEnrollmentError("Please enter your nickname, country and job.");
     return;
   }
   const participant = {
@@ -157,7 +168,7 @@ participantForm.addEventListener("submit", event => {
     gender: String(data.get("gender")),
     age: Number(data.get("age")),
     country,
-    countryCode,
+    job,
     createdAt: new Date().toISOString(),
     condition: accessCodes[accessCodeInput.value]
   };
@@ -340,6 +351,7 @@ document.querySelector(".signout-confirm").addEventListener("click", async () =>
   if (feedbackDialog.open) feedbackDialog.close();
   const profileModal = document.querySelector(".profile-dialog");
   if (profileModal.open) profileModal.close();
+  window.history.replaceState(null, "", window.location.pathname + window.location.search + "#home");
   showCompletionScreen();
 });
 
@@ -357,19 +369,13 @@ const profileDialog = document.querySelector(".profile-dialog");
 const profileForm = document.querySelector("#profile-form");
 const profileCountry = document.querySelector("#profile-country");
 const profileStatus = document.querySelector(".profile-status");
-for (const country of countries) {
-  const option = document.createElement("option");
-  option.value = country.code;
-  option.textContent = country.name;
-  profileCountry.append(option);
-}
 document.querySelector(".user-profile").addEventListener("click", () => {
   if (!activeParticipant) return;
   document.querySelector("#profile-nickname").value = activeParticipant.nickname;
-  document.querySelector("#profile-gender").value = activeParticipant.gender;
+  document.querySelector("#profile-gender").value = ({woman:"female", man:"male"})[activeParticipant.gender] || activeParticipant.gender;
   document.querySelector("#profile-age").value = activeParticipant.age;
-  profileCountry.value = activeParticipant.countryCode
-    || countries.find(country => country.name === activeParticipant.country)?.code || "";
+  profileCountry.value = activeParticipant.country || "";
+  document.querySelector("#profile-job").value = activeParticipant.job || "";
   profileStatus.hidden = true;
   profileDialog.showModal();
 });
@@ -377,7 +383,13 @@ document.querySelector(".profile-close").addEventListener("click", () => profile
 profileForm.addEventListener("submit", event => {
   event.preventDefault();
   if (!activeParticipant || !profileForm.reportValidity()) return;
-  const country = countries.find(country => country.code === profileCountry.value);
+  const country = profileCountry.value.trim();
+  const job = document.querySelector("#profile-job").value.trim();
+  if (!country || !job) {
+    profileStatus.textContent = "Please enter your country and job.";
+    profileStatus.hidden = false;
+    return;
+  }
   let latestParticipant;
   try {
     latestParticipant = JSON.parse(localStorage.getItem(PARTICIPANT_STORAGE_KEY));
@@ -392,8 +404,9 @@ profileForm.addEventListener("submit", event => {
     nickname: document.querySelector("#profile-nickname").value.trim(),
     gender: document.querySelector("#profile-gender").value,
     age: Number(document.querySelector("#profile-age").value),
-    country: country?.name || "",
-    countryCode: country?.code || "",
+    country,
+    countryCode: "",
+    job,
     updatedAt: new Date().toISOString()
   };
   if (!isValidParticipant(updated)) {

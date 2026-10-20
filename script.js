@@ -1,184 +1,11 @@
 "use strict";
 
 // Keep image and title together as one stimulus.
-const dramas = [
-  {
-    "id": 1,
-    "a": {
-      "image": "图像资源/电视剧/1a.png",
-      "title": "Hidden Daughter"
-    },
-    "b": {
-      "image": "图像资源/电视剧/1b.png",
-      "title": "Hidden Daughter Returns to a Family Full of Lies"
-    }
-  },
-  {
-    "id": 2,
-    "a": {
-      "image": "图像资源/电视剧/2a.png",
-      "title": "Stolen Life"
-    },
-    "b": {
-      "image": "图像资源/电视剧/2b.png",
-      "title": "Stolen Life Reveals the Lie Behind Our Perfect Family"
-    }
-  },
-  {
-    "id": 3,
-    "a": {
-      "image": "图像资源/电视剧/3a.png",
-      "title": "Broken Ties"
-    },
-    "b": {
-      "image": "图像资源/电视剧/3b.png",
-      "title": "Broken Ties Resurface as the Missing Son Returns"
-    }
-  },
-  {
-    "id": 4,
-    "a": {
-      "image": "图像资源/电视剧/4a.png",
-      "title": "Silent Dynasty"
-    },
-    "b": {
-      "image": "图像资源/电视剧/4b.png",
-      "title": "Silent Dynasty Falls When the Missing Son Comes Home"
-    }
-  },
-  {
-    "id": 5,
-    "a": {
-      "image": "图像资源/电视剧/5a.png",
-      "title": "Bloodlines"
-    },
-    "b": {
-      "image": "图像资源/电视剧/5b.png",
-      "title": "Bloodlines Fracture When the Will Names a Stranger"
-    }
-  },
-  {
-    "id": 6,
-    "a": {
-      "image": "图像资源/电视剧/6a.png",
-      "title": "Home Truths"
-    },
-    "b": {
-      "image": "图像资源/电视剧/6b.png",
-      "title": "Home Truths Emerge as Our Mother Reveals Another Family"
-    }
-  },
-  {
-    "id": 7,
-    "a": {
-      "image": "图像资源/电视剧/7a.png",
-      "title": "Behind Closed Doors"
-    },
-    "b": {
-      "image": "图像资源/电视剧/7b.png",
-      "title": "Behind Closed Doors, Every Promise Hides a Betrayal"
-    }
-  },
-  {
-    "id": 8,
-    "a": {
-      "image": "图像资源/电视剧/8a.png",
-      "title": "Power Within"
-    },
-    "b": {
-      "image": "图像资源/电视剧/8b.png",
-      "title": "Power Within Keeps the Family’s Crime Buried"
-    }
-  },
-  {
-    "id": 9,
-    "a": {
-      "image": "图像资源/电视剧/9a.png",
-      "title": "Deadly Manor"
-    },
-    "b": {
-      "image": "图像资源/电视剧/9b.png",
-      "title": "Deadly Manor Hides the Secrets My Family Buried"
-    }
-  },
-  {
-    "id": 10,
-    "a": {
-      "image": "图像资源/电视剧/10a.png",
-      "title": "Price of Truth"
-    },
-    "b": {
-      "image": "图像资源/电视剧/10b.png",
-      "title": "The Price of Truth Changes Who We Call Family"
-    }
-  },
-  {
-    "id": 11,
-    "a": {
-      "image": "图像资源/电视剧/11a.png",
-      "title": "Fatal Cover-Up"
-    },
-    "b": {
-      "image": "图像资源/电视剧/11b.png",
-      "title": "The Fatal Cover-Up Behind My Boyfriend’s Death"
-    }
-  },
-  {
-    "id": 12,
-    "a": {
-      "image": "图像资源/电视剧/12a.png",
-      "title": "Shattered Trust"
-    },
-    "b": {
-      "image": "图像资源/电视剧/12b.png",
-      "title": "Shattered Trust Leads Me Back to My Husband’s Brother"
-    }
-  },
-  {
-    "id": 13,
-    "a": {
-      "image": "图像资源/电视剧/13a.png",
-      "title": "Second Shift"
-    },
-    "b": {
-      "image": "图像资源/电视剧/13b.png",
-      "title": "Second Shift Brings Three Siblings Back Behind the Counter"
-    }
-  },
-  {
-    "id": 14,
-    "a": {
-      "image": "图像资源/电视剧/14a.png",
-      "title": "Last Table"
-    },
-    "b": {
-      "image": "图像资源/电视剧/14b.png",
-      "title": "Last Table Brings Three Generations Back to the Diner"
-    }
-  },
-  {
-    "id": 15,
-    "a": {
-      "image": "图像资源/电视剧/15a.png",
-      "title": "New House Rules"
-    },
-    "b": {
-      "image": "图像资源/电视剧/15b.png",
-      "title": "New House Rules Turn Our Blended Family Upside Down"
-    }
-  },
-  {
-    "id": 16,
-    "a": {
-      "image": "图像资源/电视剧/16a.png",
-      "title": "Shared Custody"
-    },
-    "b": {
-      "image": "图像资源/电视剧/16b.png",
-      "title": "Shared Custody Puts Two Households Under One Roof"
-    }
-  }
-];
+const dramas = Array.from({length:16}, (_, index) => ({
+  id: index + 1,
+  a: {image:`assets/posters/${index + 1}a.png`},
+  b: {image:`assets/posters/${index + 1}b.png`}
+}));
 
 function selectStimuli(condition) {
   return dramas.map(drama => {
@@ -196,333 +23,272 @@ function shuffle(stimuli) {
   return result;
 }
 
+// All behavioral fields are keyed by the complete image/title stimulus version.
+const dramifyIcons = {
+  play:'<path d="m9 5 11 7-11 7V5Z"/>',
+  liked:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>',
+  saved:'<path d="M6 3h12v19l-6-4-6 4V3Z"/>',
+  shared:'<path d="m14 3 8 7-8 7v-5C7 12 4 16 2 20c0-9 4-14 12-14V3Z"/>',
+  lock:'<rect x="5" y="10" width="14" height="12" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4M12 15v3"/>',
+  check:'<path d="m5 12 4 4L20 5"/>'
+};
+// Anchor images to the script directory, including deployments under /Dramify/.
+const dramifyScriptBase = typeof document !== "undefined" && document.currentScript?.src ? new URL(".", document.currentScript.src).href : "";
+function setDramaImage(image, drama) {
+  image.src = dramifyScriptBase ? new URL(drama.image, dramifyScriptBase).href : drama.image;
+  image.addEventListener("error", () => {
+    // Backward-compatible fallback when only code files were uploaded.
+    const legacy = `图像资源/电视剧/${drama.id}${drama.version}.png`;
+    image.src = dramifyScriptBase ? new URL(legacy, dramifyScriptBase).href : legacy;
+  }, {once:true});
+}
+function dramaIcon(name) {return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7">${dramifyIcons[name]}</svg>`;}
+
 function initializeDramify(participant) {
-const condition = participant.condition;
-const selectedStimuli = selectStimuli(condition);
-const savedOrder = participant.dramaOrder;
-const validOrder = Array.isArray(savedOrder) && savedOrder.length === dramas.length
-  && new Set(savedOrder).size === dramas.length
-  && savedOrder.every(id => Number.isInteger(id) && id >= 1 && id <= dramas.length);
-let displayedDramas;
-if (validOrder) {
-  const stimuliById = new Map(selectedStimuli.map(drama => [drama.id, drama]));
-  displayedDramas = savedOrder.map(id => stimuliById.get(id));
-} else {
-  displayedDramas = shuffle(selectedStimuli);
-  const dramaOrder = displayedDramas.map(drama => drama.id);
-  // Persist before rendering, including migration of older participant records.
-  // A storage failure keeps the entry screen visible rather than showing an
-  // order that would silently change on the next visit.
-  localStorage.setItem("dramify.participant.v1", JSON.stringify({ ...participant, dramaOrder }));
-  participant.dramaOrder = dramaOrder;
-}
-window.dramifyCondition = condition;
-window.dramifyOrder = displayedDramas.map(drama => drama.id);
-function validWallet(value) {
-  return value && Number.isInteger(value.balance) && value.balance >= 0 && value.balance <= 100
-    && Array.isArray(value.watchlist) && new Set(value.watchlist).size === value.watchlist.length
-    && value.watchlist.every(id => Number.isInteger(id) && id >= 1 && id <= 16)
-    && value.watchlist.length <= 5 && Array.isArray(value.transactions);
-}
-if (participant.wallet && !validWallet(participant.wallet)) throw new Error("Invalid wallet");
-if (!participant.wallet) {
-  const wallet = { policyVersion: 2, balance: 100, watchlist: [], transactions: [{ type: "registration", amount: 100, at: new Date().toISOString() }] };
-  const latest = JSON.parse(localStorage.getItem("dramify.participant.v1") || "null") || participant;
-  if (latest.id !== participant.id) throw new Error("Participant changed");
-  localStorage.setItem("dramify.participant.v1", JSON.stringify({ ...latest, wallet }));
-  participant.wallet = wallet;
-}
-// Reconcile records created by the earlier no-refund policy. The balance is
-// always the 100-coin grant minus 20 for each currently active pre-order.
-function reconcileWallet(value) {
-  const balance = 100 - 20 * value.watchlist.length;
-  const result = { ...value, policyVersion: 2, balance, transactions: [...value.transactions] };
-  if (balance !== value.balance) result.transactions.push({type:"balance_correction",amount:balance - value.balance,at:new Date().toISOString()});
-  return result;
-}
-const reconciledWallet = reconcileWallet(participant.wallet);
-if (participant.wallet.policyVersion !== 2 || participant.wallet.balance !== reconciledWallet.balance) {
-  const latest = JSON.parse(localStorage.getItem("dramify.participant.v1"));
-  if (!latest || latest.id !== participant.id) throw new Error("Participant changed");
-  localStorage.setItem("dramify.participant.v1", JSON.stringify({ ...latest, wallet: reconciledWallet }));
-  participant.wallet = reconciledWallet;
-}
-let wallet = participant.wallet;
-const watchlist = new Set(wallet.watchlist);
-const interestRatings = new Map(displayedDramas.filter(drama => Number.isInteger(participant.dramaRatings?.[`${drama.id}${drama.version}`])).map(drama => [drama.id, participant.dramaRatings[`${drama.id}${drama.version}`]]));
-const grid = document.querySelector(".drama-grid");
-const search = document.querySelector("input[type=search]");
-const filterButton = document.querySelector(".watchlist-filter");
-const browseButton = document.querySelector(".browse-all");
-let watchlistOnly = false;
-let currentView = "home";
-const historyButton = document.querySelector(".history-button");
-const historyView = document.querySelector(".history-view");
-const walletButton = document.querySelector(".wallet-button");
-const walletView = document.querySelector(".wallet-view");
-const walletNotice = document.querySelector(".wallet-notice");
-const preorderDialog = document.querySelector(".preorder-only-dialog");
-let pendingPreorder = null;
-document.querySelector(".insufficient-coins-close").addEventListener("click", () => {
-  document.querySelector(".insufficient-coins-dialog").close();
-});
-function requestPreorder(drama) {
-  // Read the saved balance before opening a purchase confirmation.
-  try {
-    const latest = JSON.parse(localStorage.getItem("dramify.participant.v1"));
-    if (!latest || latest.id !== participant.id || !validWallet(latest.wallet)) throw new Error("Invalid wallet");
-    wallet = latest.wallet;
-    watchlist.clear();
-    wallet.watchlist.forEach(id => watchlist.add(id));
-    updateWatchlistButtons();
-    renderWallet();
-  } catch (error) {
-    showWalletNotice("Your balance could not be checked. Please refresh and try again.");
-    return;
+  const key = "dramify.participant.v1";
+  const grid = document.querySelector(".drama-grid");
+  const detail = document.querySelector(".drama-detail");
+  const walletView = document.querySelector(".wallet-view");
+  const heading = document.querySelector("main h1");
+  const search = document.querySelector("input[type=search]");
+  const empty = document.querySelector(".empty-message");
+  const notice = document.querySelector(".wallet-notice");
+  const unlockDialog = document.querySelector(".unlock-dialog");
+  const successDialog = document.querySelector(".unlock-success-dialog");
+  const insufficientDialog = document.querySelector(".insufficient-coins-dialog");
+  const nav = {home:document.querySelector(".browse-all"),saved:document.querySelector(".watchlist-filter"),liked:document.querySelector(".liked-button"),shared:document.querySelector(".shared-button"),wallet:document.querySelector(".wallet-button"),history:document.querySelector(".history-button")};
+  let currentView = "home", currentDrama = null, pendingUnlock = null, pendingCancellation = null;
+  if (dramas.some(drama => !drama.a.title || !drama.b.title)) throw new Error("Drama content must be loaded from Excel before rendering");
+  const selected = selectStimuli(participant.condition);
+  const validOrder = Array.isArray(participant.dramaOrder) && participant.dramaOrder.length === 16 && new Set(participant.dramaOrder).size === 16 && participant.dramaOrder.every(id => Number.isInteger(id) && id >= 1 && id <= 16);
+  if (!validOrder) participant.dramaOrder = shuffle(selected).map(drama => drama.id);
+  const byId = new Map(selected.map(drama => [drama.id,drama]));
+  const displayed = participant.dramaOrder.map(id => byId.get(id));
+  const stimulusKey = drama => `${drama.id}${drama.version}`;
+  function read() {
+    const record = JSON.parse(localStorage.getItem(key) || "null");
+    if (!record || record.id !== participant.id) throw new Error("Participant changed");
+    return record;
   }
-  const selected = watchlist.has(drama.id);
-  if (!selected && wallet.balance < 20) {
-    pendingPreorder = null;
-    document.querySelector(".insufficient-coins-dialog").showModal();
-    return;
-  }
-  if (selected && currentView !== "watchlist") return;
-  pendingPreorder = { drama, action: selected ? "cancel" : "add" };
-  document.querySelector("#preorder-confirm-title").textContent = selected ? "Cancel pre-order?" : "Confirm pre-order";
-  document.querySelector("#preorder-confirm-description").textContent = selected
-    ? `Cancel your pre-order for “${drama.title}”? 20 coins will be returned to your wallet.`
-    : `Confirm pre-order of “${drama.title}” for 20 coins?`;
-  document.querySelector(".preorder-only-dialog .preorder-confirm").textContent = selected ? "Confirm cancellation" : "Confirm pre-order";
-  document.querySelector(".preorder-dismiss").textContent = selected ? "Keep pre-order" : "Not now";
-  preorderDialog.showModal();
-}
-document.querySelector(".preorder-dismiss").addEventListener("click", () => { pendingPreorder = null; preorderDialog.close(); });
-preorderDialog.addEventListener("cancel", () => { pendingPreorder = null; });
-document.querySelector(".preorder-only-dialog .preorder-confirm").addEventListener("click", () => {
-  if (!pendingPreorder) return;
-  const { drama, action } = pendingPreorder;
-  pendingPreorder = null;
-  preorderDialog.close();
-  commitPreorder(drama, action);
-});
-
-function showWalletNotice(message) {
-  walletNotice.textContent = message;
-  walletNotice.hidden = false;
-}
-function renderWallet() {
-  document.querySelector(".wallet-balance").textContent = String(wallet.balance);
-  document.querySelector(".sidebar-balance").textContent = `${wallet.balance} coins`;
-  const rows = wallet.transactions.map(transaction => {
-    const row = document.createElement("div");
-    row.className = "wallet-transaction";
-    const label = document.createElement("span");
-    label.textContent = transaction.type === "balance_correction" ? "Refund balance correction" : transaction.type === "registration" ? "Registration bonus"
-      : `${transaction.type === "preorder_cancel" ? "Pre-order cancelled" : "Pre-ordered"}: ${displayedDramas.find(drama => drama.id === transaction.dramaId)?.title || "Drama"}`;
-    const amount = document.createElement("strong");
-    amount.textContent = `${transaction.amount > 0 ? "+" : ""}${transaction.amount} coins`;
-    row.append(label, amount);
-    return row;
-  });
-  document.querySelector(".wallet-transactions").replaceChildren(...rows);
-}
-function updateWatchlistButtons() {
-  for (const card of grid.children) {
-    const selected = watchlist.has(Number(card.dataset.id));
-    const button = card.querySelector("button");
-    button.setAttribute("aria-pressed", String(selected));
-    button.textContent = selected ? (currentView === "watchlist" ? "Cancel pre-order" : "✓ Pre-ordered") : "Pre-order";
-    button.disabled = selected && currentView !== "watchlist";
-  }
-}
-function commitPreorder(drama, action) {
-  try {
-    const latest = JSON.parse(localStorage.getItem("dramify.participant.v1"));
-    if (!latest || latest.id !== participant.id || !validWallet(latest.wallet)) throw new Error("Invalid record");
-    const next = reconcileWallet(latest.wallet);
-    next.watchlist = [...latest.wallet.watchlist];
-    const existing = next.watchlist.indexOf(drama.id);
-    if ((action === "add" && existing >= 0) || (action === "cancel" && existing < 0)) {
-      wallet = latest.wallet;
-      watchlist.clear();
-      wallet.watchlist.forEach(id => watchlist.add(id));
-      updateWatchlistButtons(); renderWallet(); applyFilters();
-      showWalletNotice("This pre-order has already been updated. Your balance has not changed.");
-      return;
+  // Migrate previous pre-orders to free saves, refunding their old coin cost.
+  // Do not reinterpret a former pre-order as a paid unlock in the new study.
+  if (participant.wallet?.policyVersion !== 3) {
+    const legacySaved = participant.wallet?.watchlist || [];
+    participant.behaviors = {...participant.behaviors};
+    for (const id of legacySaved) {
+      const drama = byId.get(id);
+      if (drama) participant.behaviors[stimulusKey(drama)] = {...participant.behaviors[stimulusKey(drama)],saved:true};
     }
-    if (action === "cancel") {
-      if (currentView !== "watchlist") return;
-      next.watchlist.splice(existing, 1);
-      const refund = 20;
-      next.balance += refund;
-      next.transactions.push({type:"preorder_cancel", dramaId:drama.id, amount:refund, at:new Date().toISOString()});
-    } else {
-      if (next.balance < 20) {
-        wallet = latest.wallet;
-        watchlist.clear();
-        wallet.watchlist.forEach(id => watchlist.add(id));
-        updateWatchlistButtons();
-        renderWallet();
-        applyFilters();
-        showWalletNotice("Not enough coins. You need 20 coins to pre-order a drama.");
-        return;
-      }
-      next.balance -= 20;
-      next.watchlist.push(drama.id);
-      next.transactions.push({ type: "preorder_add", dramaId: drama.id, amount: -20, at: new Date().toISOString() });
-    }
-    localStorage.setItem("dramify.participant.v1", JSON.stringify({ ...latest, wallet: next }));
-    window.DramifyCloud.changed();
-    wallet = next;
-    watchlist.clear();
-    wallet.watchlist.forEach(id => watchlist.add(id));
-    updateWatchlistButtons();
-    renderWallet();
-    walletNotice.hidden = true;
-    applyFilters();
-  } catch (error) {
-    showWalletNotice("Your change could not be saved. Please allow browser storage and try again. No coins were deducted.");
+    participant.wallet = {policyVersion:3,balance:100,unlocked:[],transactions:[{type:"registration",amount:100,at:new Date().toISOString()}]};
   }
-}
+  participant.behaviors ||= {};
+  participant.behaviorEvents ||= [];
+  participant.interfaceVersion = "watch-v3";
+  localStorage.setItem(key,JSON.stringify(participant));
+  window.dramifyCondition = participant.condition;
+  window.dramifyOrder = [...participant.dramaOrder];
 
-function applyFilters() {
-  if (currentView === "history" || currentView === "wallet") {
-    document.querySelector(".empty-message").hidden = true;
-    return;
+  function state(record,drama) {return record.behaviors?.[stimulusKey(drama)] || {};}
+  function notify(message) {notice.textContent=message;notice.hidden=false;}
+  function save(change) {
+    try {
+      const record = read();
+      change(record);
+      localStorage.setItem(key,JSON.stringify(record));
+      window.DramifyCloud.changed();
+      return true;
+    } catch (error) {notify("Your change could not be saved. Please refresh and try again.");return false;}
   }
-  const query = search.value.trim().toLowerCase();
-  let visibleCount = 0;
-  for (const card of grid.children) {
-    const visible = card.querySelector("h2").textContent.toLowerCase().includes(query)
-      && (!watchlistOnly || watchlist.has(Number(card.dataset.id)));
-    card.hidden = !visible;
-    if (visible) visibleCount++;
+  function event(record,drama,action,value) {
+    record.behaviorEvents ||= [];
+    record.behaviorEvents.push({dramaId:drama.id,version:drama.version,action,value,at:new Date().toISOString()});
   }
-  const emptyMessage = document.querySelector(".empty-message");
-  emptyMessage.hidden = visibleCount !== 0;
-  emptyMessage.textContent = watchlistOnly && watchlist.size === 0
-    ? "Your watchlist is empty. Add a drama from Dramify."
-    : "No dramas found.";
-}
-
-function renderCard(drama) {
-  const card = document.createElement("article");
-  card.className = "drama-card";
-  card.dataset.id = drama.id;
-  card.dataset.version = drama.version;
-  const artwork = document.createElement("div");
-  artwork.className = "artwork";
-  const image = document.createElement("img");
-  image.src = drama.image;
-  image.alt = drama.title;
-  image.decoding = "async";
-  const badge = document.createElement("span");
-  badge.className = "badge";
-  badge.textContent = "NEW";
-  artwork.append(image, badge);
-  const title = document.createElement("h2");
-  title.className = "drama-title";
-  title.id = `drama-${drama.id}`;
-  title.textContent = drama.title;
-  card.setAttribute("aria-labelledby", title.id);
-  const button = document.createElement("button");
-  button.className = "card-watchlist";
-  button.type = "button";
-  const selected = watchlist.has(drama.id);
-  button.textContent = selected ? "✓ Pre-ordered" : "Pre-order";
-  button.disabled = selected;
-  button.setAttribute("aria-pressed", String(selected));
-  button.addEventListener("click", () => requestPreorder(drama));
-  const rating = document.createElement("div");
-  rating.className = "interest-rating";
-  const ratingLabel = document.createElement("span");
-  ratingLabel.className = "rating-label";
-  ratingLabel.textContent = "Want to watch";
-  const stars = document.createElement("div");
-  stars.className = "rating-stars";
-  stars.setAttribute("role", "group");
-  stars.setAttribute("aria-label", `Want to watch: ${drama.title}`);
-  const status = document.createElement("span");
-  status.className = "rating-status";
-  status.textContent = "Not rated";
-  status.setAttribute("aria-live", "polite");
-  function paintStars(value) {
-    for (let i = 0; i < stars.children.length; i++) {
-      stars.children[i].dataset.filled = String(i < value);
-    }
-  }
-  for (let value = 1; value <= 5; value++) {
-    const star = document.createElement("button");
-    star.type = "button";
-    star.className = "rating-star";
-    star.textContent = "★";
-    star.dataset.filled = "false";
-    star.setAttribute("aria-label", `${value} out of 5 stars`);
-    star.setAttribute("aria-pressed", "false");
-    star.title = `${value} out of 5 — click again to clear`;
-    star.addEventListener("mouseenter", () => paintStars(value));
-    star.addEventListener("focus", () => paintStars(value));
-    star.addEventListener("blur", () => paintStars(interestRatings.get(drama.id) || 0));
-    star.addEventListener("click", () => {
-      const next = interestRatings.get(drama.id) === value ? 0 : value;
-      try {
-        const latest = JSON.parse(localStorage.getItem("dramify.participant.v1"));
-        if (!latest || latest.id !== participant.id) throw new Error("Participant changed");
-        const ratings = { ...latest.dramaRatings };
-        if (next) ratings[`${drama.id}${drama.version}`] = next;
-        else delete ratings[`${drama.id}${drama.version}`];
-        localStorage.setItem("dramify.participant.v1", JSON.stringify({ ...latest, dramaRatings: ratings }));
-        window.DramifyCloud.changed();
-      } catch (error) {
-        showWalletNotice("Your rating could not be saved. Please try again.");
-        return;
-      }
-      if (next) interestRatings.set(drama.id, next);
-      else interestRatings.delete(drama.id);
-      paintStars(next);
-      for (let i = 0; i < stars.children.length; i++) {
-        stars.children[i].setAttribute("aria-pressed", String(i + 1 === next));
-      }
-      status.textContent = next ? `${next} / 5` : "Not rated";
+  function actionButton(drama,action,record) {
+    const button = document.createElement("button");
+    button.type="button";button.className=`drama-action action-${action}`;
+    const labels={play:"Play",liked:"Like",saved:"Save",shared:"Share"};
+    button.innerHTML=dramaIcon(action);
+    button.setAttribute("aria-label",`${labels[action]}: ${drama.title}`);
+    button.title=labels[action];
+    if(action!=="play")button.setAttribute("aria-pressed",String(Boolean(state(record,drama)[action])));
+    button.addEventListener("click",()=>{
+      if(action==="play") {go(`drama/${drama.id}`);return;}
+      if(save(record=>{
+        record.behaviors ||= {};
+        const behavior={...state(record,drama)};
+        behavior[action]=!behavior[action];
+        if(behavior[action])behavior[`${action}Count`]=(behavior[`${action}Count`]||0)+1;
+        record.behaviors[stimulusKey(drama)]=behavior;
+        event(record,drama,action,behavior[action]);
+      }))render();
     });
-    stars.append(star);
+    return button;
   }
-  const savedRating = interestRatings.get(drama.id) || 0;
-  paintStars(savedRating);
-  for (let i = 0; i < stars.children.length; i++) stars.children[i].setAttribute("aria-pressed", String(i + 1 === savedRating));
-  status.textContent = savedRating ? `${savedRating} / 5` : "Not rated";
-  stars.addEventListener("mouseleave", () => paintStars(interestRatings.get(drama.id) || 0));
-  rating.append(ratingLabel, stars, status);
-  card.append(artwork, title, button, rating);
-  return card;
-}
-
-grid.replaceChildren(...displayedDramas.map(renderCard));
-search.addEventListener("input", applyFilters);
-renderWallet();
-updateWatchlistButtons();
-function setView(view) {
-  currentView = view;
-  watchlistOnly = view === "watchlist";
-  historyButton.setAttribute("aria-pressed", String(view === "history"));
-  walletButton.setAttribute("aria-pressed", String(view === "wallet"));
-  filterButton.setAttribute("aria-pressed", String(watchlistOnly));
-  browseButton.setAttribute("aria-pressed", String(view === "home"));
-  historyView.hidden = view !== "history";
-  walletView.hidden = view !== "wallet";
-  grid.hidden = view === "history" || view === "wallet";
-  grid.className = watchlistOnly ? "drama-grid watchlist-view" : "drama-grid";
-  const headings = {home:"",watchlist:"My Watchlist",history:"Browsing History",wallet:"Wallet"};
-  document.querySelector("main h1").textContent = headings[view];
-  grid.setAttribute("aria-label", watchlistOnly ? "My Watchlist" : "New dramas");
-  walletNotice.hidden = true;
-  document.querySelector(".upcoming-banner").hidden = view !== "home";
-  document.querySelector(".section-heading").hidden = view === "home";
-  updateWatchlistButtons();
-  applyFilters();
-}
-filterButton.addEventListener("click", () => setView("watchlist"));
-browseButton.addEventListener("click", () => setView("home"));
-historyButton.addEventListener("click", () => setView("history"));
-walletButton.addEventListener("click", () => setView("wallet"));
+  function ratingWidget(drama,record) {
+    const widget=document.createElement("div");widget.className="interest-rating";
+    const label=document.createElement("span");label.className="rating-label";label.textContent="Want to watch";
+    const stars=document.createElement("div");stars.className="rating-stars";stars.setAttribute("role","group");stars.setAttribute("aria-label",`Want to watch: ${drama.title}`);
+    const status=document.createElement("span");status.className="rating-status";status.setAttribute("aria-live","polite");
+    const value=record.dramaRatings?.[stimulusKey(drama)]||0;
+    status.textContent=value?`${value} / 5`:"Not rated";
+    for(let i=1;i<=5;i++) {
+      const star=document.createElement("button");star.type="button";star.className="rating-star";star.textContent="★";star.dataset.filled=String(i<=value);star.setAttribute("aria-pressed",String(i===value));star.setAttribute("aria-label",`${i} out of 5 stars`);
+      star.addEventListener("click",()=>{if(save(latest=>{latest.dramaRatings ||= {};const next=latest.dramaRatings[stimulusKey(drama)]===i?0:i;if(next)latest.dramaRatings[stimulusKey(drama)]=next;else delete latest.dramaRatings[stimulusKey(drama)];event(latest,drama,"rating",next||null);} ))render();});
+      stars.append(star);
+    }
+    widget.append(label,stars,status);return widget;
+  }
+  function card(drama,record) {
+    const card=document.createElement("article");card.className="drama-card";card.dataset.id=drama.id;card.dataset.version=drama.version;
+    const artwork=document.createElement("div");artwork.className="artwork";
+    const image=document.createElement("img");setDramaImage(image,drama);image.alt=drama.title;image.decoding="async";
+    const badge=document.createElement("span");badge.className="badge";badge.textContent="NEW";
+    artwork.append(image,badge);
+    const info=document.createElement("div");info.className="card-info";
+    const title=document.createElement("h2");title.className="drama-title";title.textContent=drama.title;
+    const play=actionButton(drama,"play",record);play.className+=" card-play";
+    const playText=document.createElement("span");playText.textContent="Play";play.append(playText);
+    info.append(title);
+    if(currentView==="home") {
+      const controls=document.createElement("div");controls.className="card-hover-actions";
+      for(const action of ["liked","saved","shared"])controls.append(actionButton(drama,action,record));
+      artwork.append(controls);info.append(play);
+    } else {
+      const controls=document.createElement("div");controls.className="collection-actions";
+      controls.append(play);
+      for(const action of ["liked","saved","shared"])controls.append(actionButton(drama,action,record));
+      info.append(controls);
+      if(["liked","shared"].includes(currentView))card.className+=" no-rating";
+    }
+    card.append(artwork,info);
+    if(["saved","history"].includes(currentView))card.append(ratingWidget(drama,record));
+    return card;
+  }
+  function requestUnlock(drama) {
+    const record=read();
+    if(record.wallet.unlocked.includes(stimulusKey(drama))) {successDialog.showModal();return;}
+    if(record.wallet.balance<20){insufficientDialog.showModal();return;}
+    pendingUnlock=drama;
+    document.querySelector("#unlock-description").textContent=`Unlock all 50 episodes of “${drama.title}” for 20 coins?`;
+    unlockDialog.showModal();
+  }
+  function renderDetail(drama,record) {
+    const unlocked=record.wallet.unlocked.includes(stimulusKey(drama));
+    detail.replaceChildren();
+    const back=document.createElement("button");back.type="button";back.className="detail-back";back.textContent="← Back to Home";back.addEventListener("click",()=>go("home"));
+    const layout=document.createElement("div");layout.className="detail-layout";
+    const left=document.createElement("div");left.className="detail-left";
+    const preview=document.createElement("button");preview.type="button";preview.className="locked-preview";preview.setAttribute("aria-label",unlocked?"Drama unlocked":`Unlock ${drama.title} for 20 coins`);
+    const image=document.createElement("img");setDramaImage(image,drama);image.alt="";
+    const overlay=document.createElement("span");overlay.className="preview-lock";overlay.innerHTML=dramaIcon(unlocked?"check":"lock");
+    const caption=document.createElement("span");caption.textContent=unlocked?"All 50 episodes unlocked":"Unlock all 50 episodes · 20 coins";overlay.append(caption);preview.append(image,overlay);preview.addEventListener("click",()=>requestUnlock(drama));
+    left.append(preview);
+    if (unlocked) {
+      const cancel=document.createElement("button");cancel.type="button";cancel.className="cancel-unlock-button";cancel.textContent="Cancel unlock";
+      cancel.addEventListener("click",()=>{pendingCancellation=drama;document.querySelector(".cancel-unlock-dialog").showModal();});
+      left.append(cancel);
+    }
+    left.append(ratingWidget(drama,record));
+    const right=document.createElement("div");right.className="detail-right";
+    const title=document.createElement("h2");title.className="detail-title";title.textContent=drama.title;
+    const copy=document.createElement("div");copy.className="detail-copy";
+    if (drama.abstract) {
+      const abstract=document.createElement("p");abstract.className="detail-abstract";abstract.textContent=drama.abstract;copy.append(abstract);
+    }
+    if (drama.tags?.length) {
+      const tags=document.createElement("div");tags.className="detail-tags";
+      for (const tag of drama.tags) {const label=document.createElement("span");label.textContent=tag;tags.append(label);}
+      copy.append(tags);
+    }
+    const actions=document.createElement("div");actions.className="detail-actions";
+    for(const action of ["liked","saved","shared"])actions.append(actionButton(drama,action,record));
+    const episodesTitle=document.createElement("h3");episodesTitle.textContent="Episodes 1–50";
+    const episodes=document.createElement("div");episodes.className="episode-grid";
+    for(let i=1;i<=50;i++){
+      const episode=document.createElement("button");episode.type="button";episode.className="episode-button";episode.setAttribute("aria-label",`Episode ${i}${unlocked?", unlocked":", locked"}`);
+      const number=document.createElement("span");number.textContent=String(i);episode.append(number);
+      if(!unlocked)episode.insertAdjacentHTML("beforeend",dramaIcon("lock"));
+      episode.addEventListener("click",()=>requestUnlock(drama));episodes.append(episode);
+    }
+    right.append(title,copy,actions,episodesTitle,episodes);layout.append(left,right);detail.append(back,layout);
+  }
+  function renderWallet(record) {
+    document.querySelector(".sidebar-balance").textContent=`${record.wallet.balance} coins`;
+    document.querySelector(".wallet-balance").textContent=String(record.wallet.balance);
+    const rows=record.wallet.transactions.map(transaction=>{
+      const row=document.createElement("div");row.className="wallet-transaction";
+      const label=document.createElement("span");label.textContent=transaction.type==="registration"?"Registration bonus":`${transaction.type==="unlock_cancel"?"Unlock cancelled":"Unlocked"}: ${byId.get(transaction.dramaId)?.title||"Drama"}`;
+      const amount=document.createElement("strong");amount.textContent=`${transaction.amount>0?"+":""}${transaction.amount} coins`;row.append(label,amount);return row;
+    });
+    document.querySelector(".wallet-transactions").replaceChildren(...rows);
+  }
+  function render() {
+    const record=read();renderWallet(record);
+    document.querySelector(".home-promotion").hidden=currentView!=="home";
+    for(const [view,button] of Object.entries(nav))button.setAttribute("aria-pressed",String(view===currentView));
+    detail.hidden=currentView!=="detail";walletView.hidden=currentView!=="wallet";grid.hidden=["detail","wallet"].includes(currentView);
+    document.querySelector(".section-heading").hidden=currentView==="detail"||currentView==="home";
+    const headings={home:"",saved:"Saved",liked:"Liked",shared:"Shared",history:"Browsing History",wallet:"Wallet"};
+    heading.textContent=headings[currentView]||"";
+    empty.hidden=true;
+    if(currentView==="detail"){renderDetail(currentDrama,record);return;}
+    if(currentView==="wallet")return;
+    let list=displayed;
+    if(["saved","liked","shared"].includes(currentView))list=list.filter(drama=>state(record,drama)[currentView]);
+    if(currentView==="history")list=list.filter(drama=>state(record,drama).viewCount>0).sort((a,b)=>(state(record,b).lastViewedAt||"").localeCompare(state(record,a).lastViewedAt||""));
+    const query=search.value.trim().toLowerCase();list=list.filter(drama=>drama.title.toLowerCase().includes(query));
+    grid.className=currentView==="home"?"drama-grid":"drama-grid behavior-list";
+    grid.replaceChildren(...list.map(drama=>card(drama,record)));
+    if(!list.length){empty.hidden=false;empty.textContent=query?"No dramas found.":currentView==="saved"?"No saved dramas yet. Save a drama from Dramify.":currentView==="history"?"You haven't visited any dramas yet.":`No ${currentView} dramas yet.`;}
+  }
+  function route() {
+    const route=window.location.hash.slice(1)||"home";
+    const match=/^drama\/(\d+)$/.exec(route);
+    notice.hidden=true;
+    if(match&&byId.has(Number(match[1]))) {
+      currentDrama=byId.get(Number(match[1]));currentView="detail";
+      if(!save(record=>{record.behaviors ||= {};const behavior={...state(record,currentDrama)};behavior.viewCount=(behavior.viewCount||0)+1;behavior.lastViewedAt=new Date().toISOString();record.behaviors[stimulusKey(currentDrama)]=behavior;event(record,currentDrama,"view",behavior.viewCount);})){go("home");return;}
+    } else {currentView=Object.hasOwn(nav,route)?route:"home";currentDrama=null;}
+    render();window.scrollTo({top:0,behavior:"auto"});
+  }
+  function go(view) {if(window.location.hash===`#${view}`)return;window.location.hash=view;}
+  for(const [view,button] of Object.entries(nav))button.addEventListener("click",()=>go(view));
+  search.addEventListener("input",render);
+  window.addEventListener("hashchange",route);
+  document.querySelector(".unlock-dismiss").addEventListener("click",()=>{pendingUnlock=null;unlockDialog.close();});
+  unlockDialog.addEventListener("cancel",()=>{pendingUnlock=null;});
+  document.querySelector(".unlock-confirm").addEventListener("click",()=>{
+    if(!pendingUnlock)return;
+    const drama=pendingUnlock;pendingUnlock=null;unlockDialog.close();
+    let charged=false;
+    if(save(record=>{
+      const id=stimulusKey(drama);
+      if(record.wallet.unlocked.includes(id))return;
+      if(record.wallet.balance<20)throw new Error("Insufficient coins");
+      record.wallet.unlocked.push(id);record.wallet.balance-=20;
+      record.wallet.transactions.push({type:"unlock",dramaId:drama.id,version:drama.version,amount:-20,at:new Date().toISOString()});
+      record.behaviors ||= {};record.behaviors[id]={...state(record,drama),unlocked:true};event(record,drama,"unlock",true);charged=true;
+    })) {render();successDialog.showModal();}
+    else if(!charged&&read().wallet.balance<20)insufficientDialog.showModal();
+  });
+  const cancellationDialog=document.querySelector(".cancel-unlock-dialog");
+  document.querySelector(".cancel-unlock-dismiss").addEventListener("click",()=>{pendingCancellation=null;cancellationDialog.close();});
+  cancellationDialog.addEventListener("cancel",()=>{pendingCancellation=null;});
+  document.querySelector(".cancel-unlock-confirm").addEventListener("click",()=>{
+    if(!pendingCancellation)return;
+    const drama=pendingCancellation;pendingCancellation=null;cancellationDialog.close();
+    let refunded=false;
+    if(save(record=>{
+      const id=stimulusKey(drama);const index=record.wallet.unlocked.indexOf(id);
+      if(index<0)return;
+      record.wallet.unlocked.splice(index,1);record.wallet.balance+=20;
+      record.wallet.transactions.push({type:"unlock_cancel",dramaId:drama.id,version:drama.version,amount:20,at:new Date().toISOString()});
+      record.behaviors ||= {};record.behaviors[id]={...state(record,drama),unlocked:false};
+      event(record,drama,"unlock",false);refunded=true;
+    })) {render();if(refunded)notify("Unlock cancelled. 20 coins have been returned to your wallet.");}
+  });
+  document.querySelector(".unlock-success-home").addEventListener("click",()=>{successDialog.close();go("home");});
+  document.querySelector(".insufficient-coins-close").addEventListener("click",()=>insufficientDialog.close());
+  // Entering a detail hash on reload is a new viewing-page visit, never a charge.
+  route();
 }

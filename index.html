@@ -3,14 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Discover what's new on Dramify and keep your next favorite drama in My Watchlist.">
+  <meta name="description" content="Discover new dramas on Dramify.">
   <title>Dramify</title>
-  <link rel="stylesheet" href="style.css?v=20261018-cloud1">
-  <script src="config.js?v=20261018-cloud1" defer></script>
+  <link rel="stylesheet" href="style.css?v=20261020-excel6">
+  <script src="config.js?v=20261020-excel6" defer></script>
   <script src="vendor/supabase.js" defer></script>
-  <script src="cloud.js?v=20261018-cloud1" defer></script>
-  <script src="script.js?v=20261018-cloud1" defer></script>
-  <script src="enrollment.js?v=20261018-cloud1" defer></script>
+  <script src="vendor/xlsx.full.min.js" defer></script>
+  <script src="catalog.js?v=20261020-excel6" defer></script>
+  <script src="cloud.js?v=20261020-excel6" defer></script>
+  <script src="script.js?v=20261020-excel6" defer></script>
+  <script src="enrollment.js?v=20261020-excel6" defer></script>
 </head>
 <body class="enrolling">
   <section class="enrollment" aria-labelledby="welcome-title">
@@ -31,14 +33,16 @@
           <label for="participant-gender">Gender</label>
           <select id="participant-gender" name="gender" required>
             <option value="" disabled selected>Select your gender</option>
-            <option value="woman">Woman</option><option value="man">Man</option>
+            <option value="female">Female</option><option value="male">Male</option>
             <option value="non-binary">Non-binary</option><option value="self-described">Another identity</option>
             <option value="prefer-not-to-say">Prefer not to say</option>
           </select>
           <label for="participant-age">Age</label>
           <input id="participant-age" name="age" type="number" min="1" max="120" step="1" inputmode="numeric" required placeholder="Your age">
           <label for="participant-country">Country</label>
-          <select id="participant-country" name="country" autocomplete="country-name" required><option value="" disabled selected>Select your country</option></select>
+          <input id="participant-country" name="country" type="text" autocomplete="country-name" maxlength="100" required placeholder="Your country">
+          <label for="participant-job">Job</label>
+          <input id="participant-job" name="job" type="text" autocomplete="organization-title" maxlength="100" required placeholder="Your job">
         </fieldset>
         <p id="enrollment-error" role="alert" hidden></p>
         <div class="enrollment-actions"><button id="enrollment-back" type="button" hidden>Back</button><button class="enrollment-submit" type="submit">Continue →</button></div>
@@ -63,7 +67,9 @@
     <img class="sidebar-logo" src="图像资源/Logo.jpg" alt="Dramify" width="186" height="68">
     <nav aria-label="Browse dramas">
       <button class="browse-all" type="button" aria-pressed="true"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Home</button>
-      <button class="watchlist-filter" type="button" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2.5"/><circle cx="16" cy="11" r="2.5"/><path d="M7 16h10"/></svg>My Watchlist</button>
+      <button class="watchlist-filter" type="button" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2.5"/><circle cx="16" cy="11" r="2.5"/><path d="M7 16h10"/></svg>Saved</button>
+      <button class="liked-button" type="button" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg>Liked</button>
+      <button class="shared-button" type="button" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m14 3 8 7-8 7v-5C7 12 4 16 2 20c0-9 4-14 12-14V3Z"/></svg>Shared</button>
       <button class="wallet-button" type="button" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 9h18M16 13h5v4h-5zM6 5V3h12v2"/></svg><span>Wallet</span><span class="sidebar-balance" aria-live="polite" aria-atomic="true">100 coins</span></button>
       <button class="history-button" type="button" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 11a9 9 0 1 1 2 7M3 4v7h7M12 7v5l3 2"/></svg>Browsing History</button>
       <button class="feedback-open" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4h16v12H9l-5 4V4Z"/><path d="M8 8h8M8 12h5"/></svg>Feedback</button>
@@ -84,16 +90,17 @@
   </header>
   <main>
     <div class="data-sync-notice" role="status" hidden><span>Your changes are saved on this device but have not synced yet. Please check your connection.</span> <button class="data-sync-retry" type="button">Retry</button></div>
-    <div class="upcoming-banner"><img src="图像资源/预告banner.png" alt="Discover upcoming dramas. Pre-order for 20 coins and watch every episode for free when the drama premieres." width="2172" height="407"></div>
+
+    <div class="home-promotion"><img src="assets/brand/home-banner.png" alt="New dramas on Dramify. Explore the latest dramas and find your next favorite." width="4450" height="2145"></div>
     <div class="section-heading" hidden><h1></h1><span class="heading-rule" aria-hidden="true"></span></div>
     <section class="drama-grid" aria-label="New dramas"></section>
     <p class="wallet-notice" role="status" hidden></p>
     <section class="wallet-view" aria-label="Wallet" hidden>
       <div class="wallet-summary"><span class="wallet-eyebrow">Your balance</span><p><strong class="wallet-balance">100</strong> <span>coins</span></p><span class="wallet-gift">Registration successful — you've received 100 coins.</span></div>
-      <p class="wallet-explanation">Pre-ordering a drama costs 20 coins. Cancel a pre-order in My Watchlist to receive a 20-coin refund.</p>
+      <p class="wallet-explanation">Unlock all 50 episodes of a drama for 20 coins. Likes, saves and shares are free.</p>
       <h2 class="wallet-history-title">Coin activity</h2><div class="wallet-transactions"></div>
     </section>
-    <section class="history-view" aria-label="Browsing History" hidden></section>
+    <section class="drama-detail" aria-label="Drama viewing page" hidden></section>
     <p class="empty-message" hidden>No dramas found.</p>
     <noscript>Please enable JavaScript to browse Dramify.</noscript>
   </main>
@@ -101,7 +108,7 @@
   </div>
   <dialog class="insufficient-coins-dialog preorder-dialog" aria-labelledby="insufficient-coins-title" aria-describedby="insufficient-coins-description">
     <h2 id="insufficient-coins-title">Not enough coins</h2>
-    <p id="insufficient-coins-description">You don't have enough coins. You need 20 coins to pre-order a drama.</p>
+    <p id="insufficient-coins-description">You don't have enough coins. You need 20 coins to unlock a drama.</p>
     <div class="preorder-dialog-actions"><button class="insufficient-coins-close preorder-confirm" type="button">Got it</button></div>
   </dialog>
   <dialog class="signout-dialog preorder-dialog" aria-labelledby="signout-title" aria-describedby="signout-description">
@@ -110,18 +117,26 @@
     <p class="signout-error" role="alert" hidden></p>
     <div class="preorder-dialog-actions"><button class="signout-dismiss" type="button">Stay on Dramify</button><button class="signout-confirm preorder-confirm" type="button">Confirm sign out</button></div>
   </dialog>
-  <dialog class="preorder-dialog preorder-only-dialog" aria-labelledby="preorder-confirm-title" aria-describedby="preorder-confirm-description">
-    <h2 id="preorder-confirm-title">Confirm pre-order</h2>
-    <p id="preorder-confirm-description"></p>
-    <div class="preorder-dialog-actions"><button class="preorder-dismiss" type="button">Not now</button><button class="preorder-confirm" type="button">Confirm pre-order</button></div>
+  <dialog class="unlock-dialog preorder-dialog" aria-labelledby="unlock-title" aria-describedby="unlock-description">
+    <h2 id="unlock-title">Unlock this drama?</h2><p id="unlock-description">Unlock all 50 episodes for 20 coins?</p>
+    <div class="preorder-dialog-actions"><button class="unlock-dismiss" type="button">Not now</button><button class="unlock-confirm preorder-confirm" type="button">Confirm unlock</button></div>
+  </dialog>
+  <dialog class="cancel-unlock-dialog preorder-dialog" aria-labelledby="cancel-unlock-title">
+    <h2 id="cancel-unlock-title">Cancel unlock?</h2><p>All 50 episodes will be locked again and 20 coins will be returned to your wallet.</p>
+    <div class="preorder-dialog-actions"><button class="cancel-unlock-dismiss" type="button">Keep unlocked</button><button class="cancel-unlock-confirm preorder-confirm" type="button">Confirm cancellation</button></div>
+  </dialog>
+  <dialog class="unlock-success-dialog preorder-dialog" aria-labelledby="unlock-success-title">
+    <h2 id="unlock-success-title">Successfully unlocked</h2><p>All 50 episodes of this drama are now unlocked.</p>
+    <div class="preorder-dialog-actions"><button class="unlock-success-home preorder-confirm" type="button">Back to Home</button></div>
   </dialog>
   <dialog class="profile-dialog feedback-dialog" aria-labelledby="profile-title">
     <form id="profile-form">
       <div class="feedback-heading"><h2 id="profile-title">Your profile</h2><button class="profile-close feedback-close" type="button" aria-label="Close profile">×</button></div>
       <label for="profile-nickname">Nickname</label><input id="profile-nickname" type="text" maxlength="50" autocomplete="nickname" required>
-      <label for="profile-gender">Gender</label><select id="profile-gender" required><option value="" disabled>Select your gender</option><option value="woman">Woman</option><option value="man">Man</option><option value="non-binary">Non-binary</option><option value="self-described">Another identity</option><option value="prefer-not-to-say">Prefer not to say</option></select>
+      <label for="profile-gender">Gender</label><select id="profile-gender" required><option value="" disabled>Select your gender</option><option value="female">Female</option><option value="male">Male</option><option value="non-binary">Non-binary</option><option value="self-described">Another identity</option><option value="prefer-not-to-say">Prefer not to say</option></select>
       <label for="profile-age">Age</label><input id="profile-age" type="number" min="1" max="120" step="1" required>
-      <label for="profile-country">Country</label><select id="profile-country" autocomplete="country-name" required><option value="" disabled>Select your country</option></select>
+      <label for="profile-country">Country</label><input id="profile-country" type="text" autocomplete="country-name" maxlength="100" required placeholder="Your country">
+      <label for="profile-job">Job</label><input id="profile-job" type="text" autocomplete="organization-title" maxlength="100" required placeholder="Your job">
       <p class="profile-status" role="status" hidden></p>
       <button class="enrollment-submit" type="submit">Save changes</button>
     </form>
