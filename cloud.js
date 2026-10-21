@@ -88,7 +88,10 @@ window.DramifyCloud = (() => {
     }
     // Store added participant fields in existing JSON to avoid breaking uploads
     // on projects whose SQL export view has not been updated yet.
-    behaviorCounts.job = record.job || "";
+    // Reuse the existing Job storage slot for the Worker ID. The marker keeps
+    // historical occupation answers from being exported as MTurk identifiers.
+    behaviorCounts.job = record.mturkWorkerId || "";
+    behaviorCounts.profile_field = "mturk_worker_id";
     behaviorCounts.wallet_text = (record.wallet?.transactions || []).map(transaction => {
       const stimulus = transaction.dramaId ? ` ${transaction.dramaId}${transaction.version || ""}` : "";
       return `${transaction.at || ""} | ${transaction.type}${stimulus} | ${Number(transaction.amount) >= 0 ? "+" : ""}${Number(transaction.amount) || 0} coins`;
@@ -99,7 +102,7 @@ window.DramifyCloud = (() => {
       behavior_counts: behaviorCounts,
       behavior_events: [
         ...(record.behaviorEvents || []),
-        ...(record.job ? [{action:"profile_snapshot", job:record.job, at:record.updatedAt || record.createdAt}] : [])
+        ...(record.mturkWorkerId ? [{action:"profile_snapshot", mturk_worker_id:record.mturkWorkerId, at:record.updatedAt || record.createdAt}] : [])
       ],
       id: record.id,
       auth_user_id: userId,

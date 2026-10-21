@@ -24,20 +24,29 @@ function hasValidAccessCode() {
   return true;
 }
 const nicknameInput = document.querySelector("#participant-nickname");
+const workerIdInput = document.querySelector("#participant-worker-id");
+function hasValidWorkerId() {
+  if (!workerIdInput.reportValidity() || !/^[A-Za-z0-9]{1,64}$/.test(workerIdInput.value.trim())) {
+    showEnrollmentError("Please enter a valid MTurk Worker ID using letters and numbers.");
+    workerIdInput.focus();
+    return false;
+  }
+  return true;
+}
 function showEnrollmentStep(step) {
   enrollmentStep = step;
-  document.querySelector(".enrollment-instruction").hidden = step !== 1;
-  document.querySelector("#nickname-step").hidden = step !== 1;
+  document.querySelector("#access-step").hidden = step !== 1;
+  document.querySelector("#access-step").disabled = step !== 1;
   document.querySelector("#details-step").hidden = step !== 2;
   document.querySelector("#details-step").disabled = step !== 2;
   document.querySelector("#enrollment-step").textContent = String(step);
   const heading = document.querySelector("#welcome-title");
-  heading.textContent = step === 1 ? "Welcome Dramify" : "A little about you";
+  heading.textContent = step === 1 ? "Before you begin" : "A little about you";
   document.querySelector(".enrollment-intro").textContent = step === 1
-    ? "On the Dramify homepage, users need to enter their nickname and access code to complete registration and enter Dramify."
+    ? "Please enter your MTurk Worker ID and access code to continue."
     : "Help us get to know you so we can recommend dramas that suit you.";
   document.querySelector("#enrollment-back").hidden = step === 1;
-  document.querySelector(".enrollment-submit").textContent = step === 1 ? "Continue →" : "Start exploring →";
+  document.querySelector(".enrollment-submit").textContent = step === 1 ? "Confirm" : "Start exploring →";
   enrollmentError.hidden = true;
   heading.focus();
 }
@@ -79,7 +88,7 @@ async function enterDramify(participant, code) {
 function showDramify(participant, code) {
   if (siteStarted) return;
   try {
-    sessionStorage.setItem(ACCESS_SESSION_KEY, JSON.stringify({ participantId: participant.id, code, accessVersion: 2 }));
+    sessionStorage.setItem(ACCESS_SESSION_KEY, JSON.stringify({ participantId: participant.id, code, accessVersion: 3, workerId:participant.mturkWorkerId }));
   } catch (error) {
     showEnrollmentError("Please allow browser storage to continue.");
     return;
@@ -112,15 +121,14 @@ try {
     if (isValidParticipant(participant)) {
       returningParticipant = participant;
       nicknameInput.value = participant.nickname;
-      nicknameInput.readOnly = true;
-      document.querySelector("#welcome-title").textContent = "Welcome Dramify";
-      document.querySelector(".enrollment-intro").textContent = "On the Dramify homepage, users need to enter their nickname and access code to complete registration and enter Dramify.";
-      document.querySelector(".enrollment-progress").hidden = true;
-      document.querySelector(".enrollment-submit").textContent = "Continue to Dramify →";
+      workerIdInput.value = participant.mturkWorkerId || "";
+      document.querySelector("#participant-gender").value = ({woman:"female",man:"male"})[participant.gender] || participant.gender;
+      document.querySelector("#participant-age").value = participant.age;
+      document.querySelector("#participant-country").value = participant.country;
       // A changed configured code invalidates the previous browser session.
       let access = null;
       try { access = JSON.parse(sessionStorage.getItem(ACCESS_SESSION_KEY) || "null"); } catch (error) { /* Show the code entry again. */ }
-      if (access && access.participantId === participant.id && access.accessVersion === 2 && accessCodes[access.code] === participant.condition) enterDramify(participant, access.code);
+      if (access && participant.mturkWorkerId && access.participantId === participant.id && access.accessVersion === 3 && access.workerId === participant.mturkWorkerId && accessCodes[access.code] === participant.condition) enterDramify(participant, access.code);
     }
     else showEnrollmentError("Your saved details could not be restored. Please complete the form again.");
   }
@@ -132,52 +140,45 @@ participantForm.addEventListener("submit", event => {
   event.preventDefault();
   if (siteStarted || siteStarting) return;
   if (enrollmentStep === 1) {
-    if (!nicknameInput.reportValidity()) return;
-    if (!nicknameInput.value.trim()) {
-      showEnrollmentError("Please enter a nickname.");
-      return;
-    }
+    if (!hasValidWorkerId()) return;
     if (!hasValidAccessCode()) return;
     if (returningParticipant) {
-      const updatedParticipant = { ...returningParticipant, condition: accessCodes[accessCodeInput.value] };
-      try {
-        localStorage.setItem(PARTICIPANT_STORAGE_KEY, JSON.stringify(updatedParticipant));
-      } catch (error) {
-        showEnrollmentError("We could not save your details. Please allow browser storage and try again.");
+      if ((returningParticipant.mturkWorkerId && returningParticipant.mturkWorkerId !== workerIdInput.value.trim()) || returningParticipant.condition !== accessCodes[accessCodeInput.value]) {
+        showEnrollmentError("Please use the Worker ID and access code for your saved session, or start in a new private window.");
         return;
       }
-      enterDramify(updatedParticipant, accessCodeInput.value);
-      return;
     }
     showEnrollmentStep(2);
     return;
   }
-  if (!participantForm.reportValidity() || !hasValidAccessCode()) return;
+  if (!participantForm.reportValidity() || !hasValidAccessCode() || !hasValidWorkerId()) return;
   const data = new FormData(participantForm);
   const nickname = String(data.get("nickname") || "").trim();
   const country = String(data.get("country") || "").trim();
-  const job = String(data.get("job") || "").trim();
-  if (!nickname || !country || !job) {
-    showEnrollmentError("Please enter your nickname, country and job.");
+  if (!nickname || !country) {
+    showEnrollmentError("Please enter your nickname and country.");
     return;
   }
   const participant = {
     schemaVersion: 1,
-    id: crypto.randomUUID(),
+    ...(returningParticipant || {}),
+    id: returningParticipant?.id || crypto.randomUUID(),
     nickname,
     gender: String(data.get("gender")),
     age: Number(data.get("age")),
     country,
-    job,
-    createdAt: new Date().toISOString(),
+    mturkWorkerId: workerIdInput.value.trim(),
+    createdAt: returningParticipant?.createdAt || new Date().toISOString(),
     condition: accessCodes[accessCodeInput.value]
   };
+  delete participant.job;
   if (!isValidParticipant(participant)) {
     showEnrollmentError("Please check your details and try again.");
     return;
   }
   try {
     localStorage.setItem(PARTICIPANT_STORAGE_KEY, JSON.stringify(participant));
+    returningParticipant = participant;
   } catch (error) {
     showEnrollmentError("We could not save your details. Please enable browser storage and try again.");
     return;
@@ -321,7 +322,7 @@ document.querySelector(".signout-confirm").addEventListener("click", async () =>
     message.textContent = "Your responses have not synced yet. Please check your connection and try again. Your data is still saved on this device.";
     message.hidden = false;
     confirmButton.disabled = false;
-    confirmButton.textContent = "Confirm sign out";
+    confirmButton.textContent = "Confirm";
     return;
   }
   try {
@@ -341,7 +342,7 @@ document.querySelector(".signout-confirm").addEventListener("click", async () =>
     message.textContent = "We could not delete your saved data. Please allow browser storage and try again.";
     message.hidden = false;
     confirmButton.disabled = false;
-    confirmButton.textContent = "Confirm sign out";
+    confirmButton.textContent = "Confirm";
     return;
   }
   await window.DramifyCloud.clearSession();
@@ -359,9 +360,9 @@ document.querySelector(".copy-key-code").addEventListener("click", async () => {
   const status = document.querySelector(".copy-code-status");
   try {
     await navigator.clipboard.writeText(window.DRAMIFY_CONFIG.completionCode);
-    status.textContent = "Key code copied.";
+    status.textContent = "Finish Code copied.";
   } catch (error) {
-    status.textContent = "Please select and copy the key code above.";
+    status.textContent = "Please select and copy the Finish Code above.";
   }
 });
 
@@ -375,7 +376,7 @@ document.querySelector(".user-profile").addEventListener("click", () => {
   document.querySelector("#profile-gender").value = ({woman:"female", man:"male"})[activeParticipant.gender] || activeParticipant.gender;
   document.querySelector("#profile-age").value = activeParticipant.age;
   profileCountry.value = activeParticipant.country || "";
-  document.querySelector("#profile-job").value = activeParticipant.job || "";
+  document.querySelector("#profile-worker-id").value = activeParticipant.mturkWorkerId || "";
   profileStatus.hidden = true;
   profileDialog.showModal();
 });
@@ -384,9 +385,8 @@ profileForm.addEventListener("submit", event => {
   event.preventDefault();
   if (!activeParticipant || !profileForm.reportValidity()) return;
   const country = profileCountry.value.trim();
-  const job = document.querySelector("#profile-job").value.trim();
-  if (!country || !job) {
-    profileStatus.textContent = "Please enter your country and job.";
+  if (!country) {
+    profileStatus.textContent = "Please enter your country.";
     profileStatus.hidden = false;
     return;
   }
@@ -406,7 +406,6 @@ profileForm.addEventListener("submit", event => {
     age: Number(document.querySelector("#profile-age").value),
     country,
     countryCode: "",
-    job,
     updatedAt: new Date().toISOString()
   };
   if (!isValidParticipant(updated)) {
