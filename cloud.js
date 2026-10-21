@@ -14,6 +14,16 @@ window.DramifyCloud = (() => {
   let queue = Promise.resolve();
   let finishing = false;
   let stopped = true;
+  let syncFailed = false;
+  let visible = true;
+  let detailKey = null;
+
+  function currentDetailKey(record) {
+    const match = /^#drama\/(\d+)$/.exec(window.location?.hash || "");
+    const id = match ? Number(match[1]) : 0;
+    if (id < 1 || id > 16) return null;
+    return `${id}${(id % 2 === 1) === (record.condition === "A") ? "a" : "b"}`;
+  }
 
   function readParticipant() {
     const record = JSON.parse(localStorage.getItem(profileKey) || "null");
@@ -21,15 +31,21 @@ window.DramifyCloud = (() => {
     return record;
   }
   function showFailure(failed) {
-    const notice = document.querySelector(".data-sync-notice");
-    if (notice) notice.hidden = !failed;
+    // Keep diagnostic state without showing backend messages to participants.
+    syncFailed = failed;
   }
   function checkpoint() {
     if (stopped || finishing) return;
     const now = performance.now();
     const record = readParticipant();
-    const elapsed = Math.max(0, (now - lastTick) / 1000);
+    const elapsed = visible ? Math.max(0, (now - lastTick) / 1000) : 0;
     record.durationSeconds = Math.max(0, Number(record.durationSeconds) || 0) + elapsed;
+    if (detailKey && elapsed > 0) {
+      record.behaviors ||= {};
+      const behavior = record.behaviors[detailKey] ||= {};
+      behavior.detailDurationSeconds = Math.max(0, Number(behavior.detailDurationSeconds) || 0) + elapsed;
+    }
+    record.durationMetric = "visible-seconds-v1";
     localStorage.setItem(profileKey, JSON.stringify(record));
     lastTick = now;
   }
@@ -41,13 +57,21 @@ window.DramifyCloud = (() => {
     if (!code || !Array.isArray(record.dramaOrder) || record.dramaOrder.length !== 16) throw new Error("Invalid assignment");
     const choices = new Set(record.wallet?.unlocked || []);
     const stimuli = {};
-    for (let id = 1; id <= 16; id++) {
-      const version = (id % 2 === 1) === (record.condition === "A") ? "a" : "b";
+    for (let id = 1; id <= 16; id++) for (const version of ["a", "b"]) {
       const key = `${id}${version}`;
+      const exposed = version === ((id % 2 === 1) === (record.condition === "A") ? "a" : "b");
+      if (!exposed) {
+        stimuli[key] = {exposed:false,saved:null,liked:null,shared:null,play:null,unlocked:null,choice:null,rating:null,detail_duration_seconds:null};
+        continue;
+      }
       const rating = record.dramaRatings?.[key];
       const behavior = record.behaviors?.[key] || {};
       stimuli[key] = {
+        exposed:true,
         choice: choices.has(key) ? 1 : 0,
+        unlocked: choices.has(key) ? 1 : 0,
+        play: behavior.viewCount > 0 ? 1 : 0,
+        detail_duration_seconds: Math.round(Math.max(0, Number(behavior.detailDurationSeconds) || 0) * 1000) / 1000,
         rating: Number.isInteger(rating) && rating >= 1 && rating <= 5 ? rating : null,
         liked: behavior.liked ? 1 : 0, saved: behavior.saved ? 1 : 0, shared: behavior.shared ? 1 : 0,
         views: behavior.viewCount || 0,
@@ -56,13 +80,22 @@ window.DramifyCloud = (() => {
     }
     const behaviorCounts = {liked:0,saved:0,shared:0,browsed:0,browse_visits:0,unlocked:0,like_actions:0,save_actions:0,share_actions:0};
     for (const stimulus of Object.values(stimuli)) {
+      if (!stimulus.exposed) continue;
       behaviorCounts.liked += stimulus.liked; behaviorCounts.saved += stimulus.saved; behaviorCounts.shared += stimulus.shared;
       behaviorCounts.browsed += stimulus.views > 0 ? 1 : 0; behaviorCounts.browse_visits += stimulus.views;
       behaviorCounts.unlocked += stimulus.choice; behaviorCounts.like_actions += stimulus.like_count;
       behaviorCounts.save_actions += stimulus.save_count; behaviorCounts.share_actions += stimulus.share_count;
     }
+    // Store added participant fields in existing JSON to avoid breaking uploads
+    // on projects whose SQL export view has not been updated yet.
+    behaviorCounts.job = record.job || "";
+    behaviorCounts.wallet_text = (record.wallet?.transactions || []).map(transaction => {
+      const stimulus = transaction.dramaId ? ` ${transaction.dramaId}${transaction.version || ""}` : "";
+      return `${transaction.at || ""} | ${transaction.type}${stimulus} | ${Number(transaction.amount) >= 0 ? "+" : ""}${Number(transaction.amount) || 0} coins`;
+    }).concat(`Balance: ${Number(record.wallet?.balance) || 0} coins`).join("\n");
+    behaviorCounts.duration_metric = record.durationMetric || "legacy";
     return {
-      interface_version: "watch-v3",
+      interface_version: "watch-v4",
       behavior_counts: behaviorCounts,
       behavior_events: [
         ...(record.behaviorEvents || []),
@@ -149,6 +182,8 @@ window.DramifyCloud = (() => {
     participantId = participant.id;
     stopped = false;
     lastTick = performance.now();
+    visible = document.visibilityState !== "hidden";
+    detailKey = currentDetailKey(participant);
     interval = setInterval(() => {
       if (stopped || finishing) return;
       try {checkpoint();flush().catch(() => {});} catch (error) {showFailure(true);}
@@ -177,15 +212,22 @@ window.DramifyCloud = (() => {
     try {localStorage.removeItem(authStorageKey);} catch (error) { /* The upload remains complete even if storage cleanup is blocked. */ }
   }
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") changed();
+    if (stopped || finishing) return;
+    try {checkpoint();} catch (error) {showFailure(true);}
+    visible = document.visibilityState !== "hidden";
+    changed();
+  });
+  window.addEventListener("hashchange", () => {
+    if (stopped || finishing) return;
+    try {checkpoint();detailKey = currentDetailKey(readParticipant());} catch (error) {showFailure(true);}
+    changed();
   });
   window.addEventListener("pagehide", () => {
     // Local checkpoint is synchronous. The regular heartbeats, rather than an
     // unreliable unload request, provide the primary cloud duration updates.
     if (!stopped && !finishing) {try {checkpoint();} catch (error) {showFailure(true);}}
   });
-  window.addEventListener("pageshow",event => {if(event.persisted && !stopped)lastTick=performance.now();});
+  window.addEventListener("pageshow",event => {if(event.persisted && !stopped){lastTick=performance.now();visible=document.visibilityState!=="hidden";}});
   window.addEventListener("online",changed);
-  document.querySelector(".data-sync-retry")?.addEventListener("click",changed);
-  return {start,changed,complete,clearSession};
+  return {start,changed,complete,clearSession,getSyncStatus:() => ({failed:syncFailed})};
 })();
