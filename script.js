@@ -287,7 +287,7 @@ function initializeDramify(participant) {
       event(record,drama,"unlock",false);refunded=true;
     })) {render();if(refunded)notify("Unlock cancelled. 20 coins have been returned to your wallet.");}
   });
-  document.querySelector(".unlock-success-home").addEventListener("click",()=>{successDialog.close();go("home");});
+  document.querySelector(".unlock-success-home").addEventListener("click",()=>successDialog.close());
   document.querySelector(".insufficient-coins-close").addEventListener("click",()=>insufficientDialog.close());
   // Entering a detail hash on reload is a new viewing-page visit, never a charge.
   route();
