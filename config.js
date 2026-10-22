@@ -1,11 +1,13 @@
 "use strict";
 
-// Change these 8-digit codes, then redeploy to update access and assignment.
+// Change these 4-digit codes, then redeploy to update access and assignment.
 // This is a client-side gate, not server-enforced authentication.
 window.DRAMIFY_CONFIG = Object.freeze({
   accessCodes: Object.freeze({
-    "20266202": "A",
-    "62022026": "B"
+    "2002": "A",
+    "2004": "B",
+    "2006": "A",
+    "2008": "B"
   }),
   completionCode: "skmxbueo",
   supabase: Object.freeze({

@@ -16,8 +16,8 @@ const accessCodeInput = document.querySelector("#access-code");
 const accessCodes = window.DRAMIFY_CONFIG.accessCodes;
 
 function hasValidAccessCode() {
-  if (!/^[0-9]{8}$/.test(accessCodeInput.value) || !Object.hasOwn(accessCodes, accessCodeInput.value)) {
-    showEnrollmentError("That access code is incorrect. Please enter the 8-digit code provided to you.");
+  if (!/^[0-9]{4}$/.test(accessCodeInput.value) || !Object.hasOwn(accessCodes, accessCodeInput.value)) {
+    showEnrollmentError("That access code is incorrect. Please enter the 4-digit code provided to you.");
     accessCodeInput.focus();
     return false;
   }
@@ -93,6 +93,8 @@ function showDramify(participant, code) {
     showEnrollmentError("Please allow browser storage to continue.");
     return;
   }
+  participant.accessCode ||= code;
+  localStorage.setItem(PARTICIPANT_STORAGE_KEY, JSON.stringify(participant));
   activeParticipant = participant;
   document.querySelector(".user-nickname").textContent = participant.nickname;
   document.querySelector(".user-profile").title = participant.nickname;
@@ -107,6 +109,16 @@ function showDramify(participant, code) {
   document.querySelector("#dramify-app").hidden = false;
   document.body.classList.remove("enrolling");
   window.DramifyCloud.start(participant);
+  const stayTimer = document.querySelector(".stay-timer");
+  stayTimer.hidden = !["2006", "2008"].includes(participant.accessCode);
+  if (!stayTimer.hidden) {
+    const updateStayTimer = () => {
+      const seconds = Math.floor(window.DramifyCloud.getDurationSeconds());
+      document.querySelector(".stay-timer-value").textContent = `${String(Math.floor(seconds / 3600)).padStart(2,"0")}:${String(Math.floor(seconds / 60) % 60).padStart(2,"0")}:${String(seconds % 60).padStart(2,"0")}`;
+    };
+    updateStayTimer();
+    setInterval(updateStayTimer, 1000);
+  }
 }
 
 function showEnrollmentError(message) {
@@ -128,7 +140,7 @@ try {
       // A changed configured code invalidates the previous browser session.
       let access = null;
       try { access = JSON.parse(sessionStorage.getItem(ACCESS_SESSION_KEY) || "null"); } catch (error) { /* Show the code entry again. */ }
-      if (access && participant.mturkWorkerId && access.participantId === participant.id && access.accessVersion === 3 && access.workerId === participant.mturkWorkerId && accessCodes[access.code] === participant.condition) enterDramify(participant, access.code);
+      if (access && participant.mturkWorkerId && access.participantId === participant.id && access.accessVersion === 3 && access.workerId === participant.mturkWorkerId && accessCodes[access.code] === participant.condition && (!participant.accessCode || participant.accessCode === access.code)) enterDramify(participant, access.code);
     }
     else showEnrollmentError("Your saved details could not be restored. Please complete the form again.");
   }
@@ -143,7 +155,7 @@ participantForm.addEventListener("submit", event => {
     if (!hasValidWorkerId()) return;
     if (!hasValidAccessCode()) return;
     if (returningParticipant) {
-      if ((returningParticipant.mturkWorkerId && returningParticipant.mturkWorkerId !== workerIdInput.value.trim()) || returningParticipant.condition !== accessCodes[accessCodeInput.value]) {
+      if ((returningParticipant.mturkWorkerId && returningParticipant.mturkWorkerId !== workerIdInput.value.trim()) || (returningParticipant.accessCode && returningParticipant.accessCode !== accessCodeInput.value) || returningParticipant.condition !== accessCodes[accessCodeInput.value]) {
         showEnrollmentError("Please use the Worker ID and access code for your saved session, or start in a new private window.");
         return;
       }
@@ -169,6 +181,7 @@ participantForm.addEventListener("submit", event => {
     country,
     mturkWorkerId: workerIdInput.value.trim(),
     createdAt: returningParticipant?.createdAt || new Date().toISOString(),
+    accessCode: returningParticipant?.accessCode || accessCodeInput.value,
     condition: accessCodes[accessCodeInput.value]
   };
   delete participant.job;

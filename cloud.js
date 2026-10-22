@@ -53,7 +53,7 @@ window.DramifyCloud = (() => {
     const feedbackEntries = JSON.parse(localStorage.getItem("dramify.feedback.v1") || "[]");
     if (!Array.isArray(feedbackEntries)) throw new Error("Invalid feedback records");
     const feedback = feedbackEntries.filter(entry => entry.participantId === record.id).at(-1);
-    const code = Object.entries(window.DRAMIFY_CONFIG.accessCodes).find(([, condition]) => condition === record.condition)?.[0];
+    const code = record.accessCode || Object.entries(window.DRAMIFY_CONFIG.accessCodes).find(([, condition]) => condition === record.condition)?.[0];
     if (!code || !Array.isArray(record.dramaOrder) || record.dramaOrder.length !== 16) throw new Error("Invalid assignment");
     const choices = new Set(record.wallet?.unlocked || []);
     const stimuli = {};
@@ -234,5 +234,9 @@ window.DramifyCloud = (() => {
   });
   window.addEventListener("pageshow",event => {if(event.persisted && !stopped){lastTick=performance.now();visible=document.visibilityState!=="hidden";}});
   window.addEventListener("online",changed);
-  return {start,changed,complete,clearSession,getSyncStatus:() => ({failed:syncFailed})};
+  function getDurationSeconds() {
+    const stored = Math.max(0, Number(readParticipant()?.durationSeconds) || 0);
+    return stored + (!stopped && !finishing && visible ? Math.max(0, (performance.now() - lastTick) / 1000) : 0);
+  }
+  return {start,changed,complete,clearSession,getDurationSeconds,getSyncStatus:() => ({failed:syncFailed})};
 })();
