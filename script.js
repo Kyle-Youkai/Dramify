@@ -140,6 +140,10 @@ function initializeDramify(participant) {
     const card=document.createElement("article");card.className="drama-card";card.dataset.id=drama.id;card.dataset.version=drama.version;
     const artwork=document.createElement("div");artwork.className="artwork";
     const image=document.createElement("img");setDramaImage(image,drama);image.alt=drama.title;image.decoding="async";
+    image.className="poster-link";image.tabIndex=0;
+    image.setAttribute("role","link");image.setAttribute("aria-label",`View details: ${drama.title}`);
+    image.addEventListener("click",()=>go(`drama/${drama.id}`));
+    image.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();go(`drama/${drama.id}`);}});
     const badge=document.createElement("span");badge.className="badge";badge.textContent="NEW";
     artwork.append(image,badge);
     const info=document.createElement("div");info.className="card-info";

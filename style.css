@@ -82,3 +82,5 @@ body.enrolling{min-width:0;background:#faf7f8}.enrollment{min-height:100vh;displ
 .stay-timer[hidden]{display:none}.stay-timer svg{grid-row:1 / 3;width:38px;height:38px;color:#b5205b}.stay-timer>span:not(.stay-timer-value){font-size:14px;font-weight:500}.stay-timer-value{font-size:34px;font-weight:650;line-height:1.15;font-variant-numeric:tabular-nums;color:#382a32}
 .sidebar-footer{padding-top:80px;padding-bottom:16px}.sidebar-footer .sign-out{margin-bottom:16px}
 @media(max-width:700px){.stay-timer{right:16px;bottom:16px;min-width:180px;padding:16px 20px;column-gap:12px}.stay-timer-value{font-size:28px}.stay-timer svg{width:30px;height:30px}}
+
+.poster-link{cursor:pointer}.poster-link:focus-visible{outline:3px solid #e9367d;outline-offset:-3px}.artwork .badge{pointer-events:none}
