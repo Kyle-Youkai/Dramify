@@ -162,6 +162,7 @@ window.DramifyCloud = (() => {
     const work = queue.catch(() => {}).then(async () => {
       const userId = await ensureAuth();
       const record = readParticipant();
+      if (completed && record.wallet?.balance !== 0) throw new Error("Please use all your coins before finishing.");
       const row = buildSnapshot(record,userId,completed);
       const {error} = await client.from("dramify_responses").upsert(row,{onConflict:"id"});
       if (error) throw error;
@@ -196,6 +197,7 @@ window.DramifyCloud = (() => {
   async function complete() {
     if (stopped && finishing) return;
     if (stopped) throw new Error("Cloud collection has not started");
+    if (readParticipant().wallet?.balance !== 0) throw new Error("Please use all your coins before finishing.");
     checkpoint();
     finishing = true;
     clearTimeout(timer);

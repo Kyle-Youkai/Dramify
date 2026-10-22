@@ -303,9 +303,23 @@ function showCompletionScreen() {
 }
 
 const signoutDialog = document.querySelector(".signout-dialog");
+function canFinishExperience() {
+  const message = document.querySelector(".signout-error");
+  try {
+    const record = JSON.parse(localStorage.getItem(PARTICIPANT_STORAGE_KEY) || "null");
+    if (!record || record.id !== activeParticipant?.id) throw new Error("Participant changed");
+    if (record.wallet?.balance === 0) return true;
+    message.textContent = `Please use all your coins before finishing. You have ${record.wallet?.balance ?? "remaining"} coins left.`;
+  } catch (error) {
+    message.textContent = "Your wallet could not be checked. Please refresh and try again.";
+  }
+  message.hidden = false;
+  return false;
+}
 document.querySelector(".sign-out").addEventListener("click", () => {
   if (!activeParticipant) return;
   document.querySelector(".signout-error").hidden = true;
+  document.querySelector(".signout-confirm").disabled = !canFinishExperience();
   signoutDialog.showModal();
 });
 document.querySelector(".signout-dismiss").addEventListener("click", () => signoutDialog.close());
@@ -313,6 +327,7 @@ document.querySelector(".signout-confirm").addEventListener("click", async () =>
   if (!activeParticipant) return;
   const confirmButton = document.querySelector(".signout-confirm");
   if (confirmButton.disabled) return;
+  if (!canFinishExperience()) return;
   confirmButton.disabled = true;
   confirmButton.textContent = "Saving…";
   try {
