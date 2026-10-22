@@ -114,7 +114,7 @@ function showDramify(participant, code) {
   if (!stayTimer.hidden) {
     const updateStayTimer = () => {
       const seconds = Math.floor(window.DramifyCloud.getDurationSeconds());
-      document.querySelector(".stay-timer-value").textContent = `${String(Math.floor(seconds / 3600)).padStart(2,"0")}:${String(Math.floor(seconds / 60) % 60).padStart(2,"0")}:${String(seconds % 60).padStart(2,"0")}`;
+      document.querySelector(".stay-timer-value").textContent = `${Math.floor(seconds / 60)} min`;
     };
     updateStayTimer();
     setInterval(updateStayTimer, 1000);
