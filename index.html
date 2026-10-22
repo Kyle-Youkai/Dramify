@@ -11,7 +11,7 @@
   <script src="vendor/xlsx.full.min.js" defer></script>
   <script src="catalog.js?v=20261020-excel6" defer></script>
   <script src="cloud.js?v=20261021-finish12" defer></script>
-  <script src="script.js?v=20261021-confirm9" defer></script>
+  <script src="script.js?v=20261022-unlocked13" defer></script>
   <script src="enrollment.js?v=20261021-finish12" defer></script>
 </head>
 <body class="enrolling">
@@ -66,6 +66,7 @@
     <img class="sidebar-logo" src="图像资源/Logo.jpg" alt="Dramify" width="186" height="68">
     <nav aria-label="Browse dramas">
       <button class="browse-all" type="button" aria-pressed="true"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Home</button>
+      <button class="unlocked-button" type="button" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="10" width="16" height="12" rx="2"/><path d="M8 10V6a4 4 0 0 1 7.5-2M9 16l2 2 4-4"/></svg>Unlocked</button>
       <button class="watchlist-filter" type="button" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2.5"/><circle cx="16" cy="11" r="2.5"/><path d="M7 16h10"/></svg>Saved</button>
       <button class="liked-button" type="button" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg>Liked</button>
       <button class="shared-button" type="button" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m14 3 8 7-8 7v-5C7 12 4 16 2 20c0-9 4-14 12-14V3Z"/></svg>Shared</button>
@@ -114,18 +115,6 @@
     <p id="signout-description">You can finish when your coin balance is 0. Your responses will be saved before your Finish Code is shown.</p>
     <p class="signout-error" role="alert" hidden></p>
     <div class="preorder-dialog-actions"><button class="signout-dismiss" type="button">Keep exploring</button><button class="signout-confirm preorder-confirm" type="button">Confirm</button></div>
-  </dialog>
-  <dialog class="unlock-dialog preorder-dialog" aria-labelledby="unlock-title" aria-describedby="unlock-description">
-    <h2 id="unlock-title">Unlock this drama?</h2><p id="unlock-description">Unlock all 50 episodes for 20 coins?</p>
-    <div class="preorder-dialog-actions"><button class="unlock-dismiss" type="button">Not now</button><button class="unlock-confirm preorder-confirm" type="button">Confirm unlock</button></div>
-  </dialog>
-  <dialog class="cancel-unlock-dialog preorder-dialog" aria-labelledby="cancel-unlock-title">
-    <h2 id="cancel-unlock-title">Cancel unlock?</h2><p>All 50 episodes will be locked again and 20 coins will be returned to your wallet.</p>
-    <div class="preorder-dialog-actions"><button class="cancel-unlock-dismiss" type="button">Keep unlocked</button><button class="cancel-unlock-confirm preorder-confirm" type="button">Confirm cancellation</button></div>
-  </dialog>
-  <dialog class="unlock-success-dialog preorder-dialog" aria-labelledby="unlock-success-title">
-    <h2 id="unlock-success-title">Successfully unlocked</h2><p>All 50 episodes of this drama are now unlocked.</p>
-    <div class="preorder-dialog-actions"><button class="unlock-success-home preorder-confirm" type="button">Confirm</button></div>
   </dialog>
   <dialog class="profile-dialog feedback-dialog" aria-labelledby="profile-title">
     <form id="profile-form">

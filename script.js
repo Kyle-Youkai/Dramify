@@ -53,11 +53,9 @@ function initializeDramify(participant) {
   const search = document.querySelector("input[type=search]");
   const empty = document.querySelector(".empty-message");
   const notice = document.querySelector(".wallet-notice");
-  const unlockDialog = document.querySelector(".unlock-dialog");
-  const successDialog = document.querySelector(".unlock-success-dialog");
   const insufficientDialog = document.querySelector(".insufficient-coins-dialog");
-  const nav = {home:document.querySelector(".browse-all"),saved:document.querySelector(".watchlist-filter"),liked:document.querySelector(".liked-button"),shared:document.querySelector(".shared-button"),wallet:document.querySelector(".wallet-button"),history:document.querySelector(".history-button")};
-  let currentView = "home", currentDrama = null, pendingUnlock = null, pendingCancellation = null;
+  const nav = {home:document.querySelector(".browse-all"),unlocked:document.querySelector(".unlocked-button"),saved:document.querySelector(".watchlist-filter"),liked:document.querySelector(".liked-button"),shared:document.querySelector(".shared-button"),wallet:document.querySelector(".wallet-button"),history:document.querySelector(".history-button")};
+  let currentView = "home", currentDrama = null;
   if (dramas.some(drama => !drama.a.title || !drama.b.title)) throw new Error("Drama content must be loaded from Excel before rendering");
   const selected = selectStimuli(participant.condition);
   const validOrder = Array.isArray(participant.dramaOrder) && participant.dramaOrder.length === 16 && new Set(participant.dramaOrder).size === 16 && participant.dramaOrder.every(id => Number.isInteger(id) && id >= 1 && id <= 16);
@@ -158,20 +156,18 @@ function initializeDramify(participant) {
       controls.append(play);
       for(const action of ["liked","saved","shared"])controls.append(actionButton(drama,action,record));
       info.append(controls);
-      if(["liked","shared"].includes(currentView))card.className+=" no-rating";
     }
     card.append(artwork,info);
-    if(["saved","history"].includes(currentView))card.append(ratingWidget(drama,record));
+    if(["unlocked","saved","liked","shared","history"].includes(currentView))card.append(ratingWidget(drama,record));
     return card;
   }
   function requestUnlock(drama) {
     const record=read();
-    if(record.wallet.unlocked.includes(stimulusKey(drama))) {successDialog.showModal();return;}
+    if(record.wallet.unlocked.includes(stimulusKey(drama)))return;
     if(record.wallet.balance<20){insufficientDialog.showModal();return;}
-    pendingUnlock=drama;
-    document.querySelector("#unlock-description").textContent=`Unlock all 50 episodes of “${drama.title}” for 20 coins?`;
-    unlockDialog.showModal();
+    unlockDrama(drama);
   }
+
   function renderDetail(drama,record) {
     const unlocked=record.wallet.unlocked.includes(stimulusKey(drama));
     detail.replaceChildren();
@@ -185,7 +181,7 @@ function initializeDramify(participant) {
     left.append(preview);
     if (unlocked) {
       const cancel=document.createElement("button");cancel.type="button";cancel.className="cancel-unlock-button";cancel.textContent="Cancel unlock";
-      cancel.addEventListener("click",()=>{pendingCancellation=drama;document.querySelector(".cancel-unlock-dialog").showModal();});
+      cancel.addEventListener("click",()=>cancelUnlock(drama));
       left.append(cancel);
     }
     left.append(ratingWidget(drama,record));
@@ -228,13 +224,14 @@ function initializeDramify(participant) {
     for(const [view,button] of Object.entries(nav))button.setAttribute("aria-pressed",String(view===currentView));
     detail.hidden=currentView!=="detail";walletView.hidden=currentView!=="wallet";grid.hidden=["detail","wallet"].includes(currentView);
     document.querySelector(".section-heading").hidden=currentView==="detail"||currentView==="home";
-    const headings={home:"",saved:"Saved",liked:"Liked",shared:"Shared",history:"Browsing History",wallet:"Wallet"};
+    const headings={home:"",unlocked:"Unlocked",saved:"Saved",liked:"Liked",shared:"Shared",history:"Browsing History",wallet:"Wallet"};
     heading.textContent=headings[currentView]||"";
     empty.hidden=true;
     if(currentView==="detail"){renderDetail(currentDrama,record);return;}
     if(currentView==="wallet")return;
     let list=displayed;
     if(["saved","liked","shared"].includes(currentView))list=list.filter(drama=>state(record,drama)[currentView]);
+    if(currentView==="unlocked")list=list.filter(drama=>record.wallet.unlocked.includes(stimulusKey(drama)));
     if(currentView==="history")list=list.filter(drama=>state(record,drama).viewCount>0).sort((a,b)=>(state(record,b).lastViewedAt||"").localeCompare(state(record,a).lastViewedAt||""));
     const query=search.value.trim().toLowerCase();list=list.filter(drama=>drama.title.toLowerCase().includes(query));
     grid.className=currentView==="home"?"drama-grid":"drama-grid behavior-list";
@@ -255,11 +252,7 @@ function initializeDramify(participant) {
   for(const [view,button] of Object.entries(nav))button.addEventListener("click",()=>go(view));
   search.addEventListener("input",render);
   window.addEventListener("hashchange",route);
-  document.querySelector(".unlock-dismiss").addEventListener("click",()=>{pendingUnlock=null;unlockDialog.close();});
-  unlockDialog.addEventListener("cancel",()=>{pendingUnlock=null;});
-  document.querySelector(".unlock-confirm").addEventListener("click",()=>{
-    if(!pendingUnlock)return;
-    const drama=pendingUnlock;pendingUnlock=null;unlockDialog.close();
+  function unlockDrama(drama) {
     let charged=false;
     if(save(record=>{
       const id=stimulusKey(drama);
@@ -268,15 +261,10 @@ function initializeDramify(participant) {
       record.wallet.unlocked.push(id);record.wallet.balance-=20;
       record.wallet.transactions.push({type:"unlock",dramaId:drama.id,version:drama.version,amount:-20,at:new Date().toISOString()});
       record.behaviors ||= {};record.behaviors[id]={...state(record,drama),unlocked:true};event(record,drama,"unlock",true);charged=true;
-    })) {render();successDialog.showModal();}
+    })) {render();if(charged)notify("Successfully unlocked. All 50 episodes are now unlocked.");}
     else if(!charged&&read().wallet.balance<20)insufficientDialog.showModal();
-  });
-  const cancellationDialog=document.querySelector(".cancel-unlock-dialog");
-  document.querySelector(".cancel-unlock-dismiss").addEventListener("click",()=>{pendingCancellation=null;cancellationDialog.close();});
-  cancellationDialog.addEventListener("cancel",()=>{pendingCancellation=null;});
-  document.querySelector(".cancel-unlock-confirm").addEventListener("click",()=>{
-    if(!pendingCancellation)return;
-    const drama=pendingCancellation;pendingCancellation=null;cancellationDialog.close();
+  }
+  function cancelUnlock(drama) {
     let refunded=false;
     if(save(record=>{
       const id=stimulusKey(drama);const index=record.wallet.unlocked.indexOf(id);
@@ -286,8 +274,7 @@ function initializeDramify(participant) {
       record.behaviors ||= {};record.behaviors[id]={...state(record,drama),unlocked:false};
       event(record,drama,"unlock",false);refunded=true;
     })) {render();if(refunded)notify("Unlock cancelled. 20 coins have been returned to your wallet.");}
-  });
-  document.querySelector(".unlock-success-home").addEventListener("click",()=>successDialog.close());
+  }
   document.querySelector(".insufficient-coins-close").addEventListener("click",()=>insufficientDialog.close());
   // Entering a detail hash on reload is a new viewing-page visit, never a charge.
   route();
