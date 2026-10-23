@@ -8,6 +8,12 @@ const enrollmentError = document.querySelector("#enrollment-error");
 let siteStarted = false;
 let siteStarting = false;
 let activeParticipant = null;
+let stayTimerFrame = null;
+
+function formatStayDuration(seconds) {
+  const ms = Math.max(0, Math.floor(seconds * 1000));
+  return `${String(Math.floor(ms / 3600000)).padStart(2,"0")}:${String(Math.floor(ms / 60000) % 60).padStart(2,"0")}:${String(Math.floor(ms / 1000) % 60).padStart(2,"0")}.${String(ms % 1000).padStart(3,"0")}`;
+}
 let enrollmentStep = 1;
 let returningParticipant = null;
 const ACCESS_SESSION_KEY = "dramify.access.v1";
@@ -112,12 +118,13 @@ function showDramify(participant, code) {
   const stayTimer = document.querySelector(".stay-timer");
   stayTimer.hidden = !["2006", "2008"].includes(participant.accessCode);
   if (!stayTimer.hidden) {
+    const timerValue = document.querySelector(".stay-timer-value");
     const updateStayTimer = () => {
-      const seconds = Math.floor(window.DramifyCloud.getDurationSeconds());
-      document.querySelector(".stay-timer-value").textContent = `${Math.floor(seconds / 60)} min`;
+      if (!activeParticipant) return;
+      timerValue.textContent = formatStayDuration(window.DramifyCloud.getDurationSeconds());
+      stayTimerFrame = requestAnimationFrame(updateStayTimer);
     };
     updateStayTimer();
-    setInterval(updateStayTimer, 1000);
   }
 }
 
@@ -373,6 +380,8 @@ document.querySelector(".signout-confirm").addEventListener("click", async () =>
     confirmButton.textContent = "Confirm";
     return;
   }
+  if (stayTimerFrame !== null) cancelAnimationFrame(stayTimerFrame);
+  stayTimerFrame = null;
   await window.DramifyCloud.clearSession();
   activeParticipant = null;
   returningParticipant = null;
