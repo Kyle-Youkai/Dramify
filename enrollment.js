@@ -121,7 +121,7 @@ function showDramify(participant, code) {
     const timerValue = document.querySelector(".stay-timer-value");
     const updateStayTimer = () => {
       if (!activeParticipant) return;
-      timerValue.textContent = formatStayDuration(window.DramifyCloud.getDurationSeconds());
+      timerValue.textContent = formatStayDuration(Math.max(0, 180 - window.DramifyCloud.getDurationSeconds()));
       stayTimerFrame = requestAnimationFrame(updateStayTimer);
     };
     updateStayTimer();
